@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { AlertCircle, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import logoImage from "../../assets/b832ca2e23521f84cfef298c0f3c475a3cb6def2.png";
+import logo2 from "../../assets/b832ca2e23521f84cfef298c0f3c475a3cb6def22.png";
 
 interface LoginProps {
   onLogin: (role: string) => void;
@@ -81,17 +82,27 @@ export function Login({ onLogin }: LoginProps) {
   const isFormValid = email && password && validateEmail(email);
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div
+      className="min-h-screen flex flex-col relative"
+      style={{
+        backgroundImage: `url("https://res.cloudinary.com/dfbvnb3vx/image/upload/v1761673162/1e2d90795bf23ad1191edc9d1a1fb2a5_ygempy.jpg")`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+      }}
+    >
+      {/* Dark overlay to ensure form contrast */}
+      <div className="absolute inset-0 bg-black/50" aria-hidden />
       {/* Header */}
-      <div className="p-6 flex items-center justify-between">
+  <div className="p-2 flex items-center justify-between relative z-10">
         <div className="flex items-center gap-3">
-          <img src={logoImage} alt="LPG Engineering" className="h-12 w-auto" />
+          <img src={logo2} alt="LPG Engineering" className="h-12 w-auto" />
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex items-center justify-center p-6">
-        <div className="w-full max-w-md space-y-4">
+      <div className="flex-1 flex items-center justify-center  relative z-10">
+        <div className="w-full max-w-md ">
           <Card>
             <CardHeader>
               <CardTitle>Sign in</CardTitle>
@@ -213,11 +224,8 @@ export function Login({ onLogin }: LoginProps) {
 
           {/* Test Credentials Card */}
           <Card className="border-primary/20 bg-primary/5">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm">Test Credentials</CardTitle>
-              <CardDescription className="text-xs">
-                Use these emails to test different roles (any password works)
-              </CardDescription>
+            <CardHeader className="pb-1">
+              <CardTitle className="text-sm text-white">Test Credentials</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
               <div 
