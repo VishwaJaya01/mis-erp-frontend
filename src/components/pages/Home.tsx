@@ -5,6 +5,11 @@ import { Checkbox } from "../ui/checkbox";
 import { Badge } from "../ui/badge";
 import { Separator } from "../ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../ui/dialog";
+import { Input } from "../ui/input";
+import { Label } from "../ui/label";
+import { Textarea } from "../ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { Clock, Play, Pause, Plus, CheckCircle2, Circle, Timer } from "lucide-react";
 import { Avatar, AvatarFallback } from "../ui/avatar";
 import { useState, useEffect } from "react";
@@ -144,11 +149,23 @@ function EmployeeContent() {
   const [timerRunning, setTimerRunning] = useState(false);
   const [timerSeconds, setTimerSeconds] = useState(0);
   const [taskFilter, setTaskFilter] = useState<'today' | 'week'>('today');
+  const [showCreateTaskDialog, setShowCreateTaskDialog] = useState(false);
   const [tasks, setTasks] = useState([
     { id: '1', title: 'Complete #1043 material inspection', order: '#1043', customer: 'APEX Garments', status: 'In progress', due: 'Due today', completed: false },
     { id: '2', title: 'QA review for #1044', order: '#1044', customer: 'Orion Tools', status: 'Todo', due: 'Tomorrow', completed: false },
     { id: '3', title: 'Update production drawings', order: '#1045', customer: 'Ceylon Plastics', status: 'Todo', due: 'Oct 30', completed: false }
   ]);
+
+  // Form state for create task
+  const [newTask, setNewTask] = useState({
+    title: '',
+    description: '',
+    order: '',
+    customer: '',
+    dueDate: '',
+    priority: 'medium' as 'low' | 'medium' | 'high',
+    estimatedHours: ''
+  });
 
   // Format seconds to HH:MM:SS
   const formatTime = (seconds: number) => {
@@ -199,7 +216,82 @@ function EmployeeContent() {
 
   // Handle create task
   const handleCreateTask = () => {
-    toast.info('Create task dialog - Coming soon');
+    setShowCreateTaskDialog(true);
+  };
+
+  // Handle create task form submission
+  const handleCreateTaskSubmit = async () => {
+    // Validate required fields
+    if (!newTask.title.trim()) {
+      toast.error('Please enter a task title');
+      return;
+    }
+
+    try {
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      // Format due date
+      let dueText = 'No due date';
+      if (newTask.dueDate) {
+        const dueDate = new Date(newTask.dueDate);
+        const today = new Date();
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        
+        if (dueDate.toDateString() === today.toDateString()) {
+          dueText = 'Due today';
+        } else if (dueDate.toDateString() === tomorrow.toDateString()) {
+          dueText = 'Tomorrow';
+        } else {
+          dueText = dueDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        }
+      }
+
+      // Create new task
+      const task = {
+        id: String(Date.now()),
+        title: newTask.title,
+        order: newTask.order || 'No order',
+        customer: newTask.customer || 'No customer',
+        status: 'Todo',
+        due: dueText,
+        completed: false
+      };
+
+      setTasks([...tasks, task]);
+      
+      // Reset form
+      setNewTask({
+        title: '',
+        description: '',
+        order: '',
+        customer: '',
+        dueDate: '',
+        priority: 'medium',
+        estimatedHours: ''
+      });
+      
+      setShowCreateTaskDialog(false);
+      toast.success('Task created successfully');
+    } catch (error) {
+      console.error('Create task error:', error);
+      toast.error('Failed to create task. Please try again.');
+    }
+  };
+
+  // Handle cancel create task
+  const handleCancelCreateTask = () => {
+    setNewTask({
+      title: '',
+      description: '',
+      order: '',
+      customer: '',
+      dueDate: '',
+      priority: 'medium',
+      estimatedHours: ''
+    });
+    setShowCreateTaskDialog(false);
   };
 
   // Handle manual time log
@@ -320,6 +412,112 @@ function EmployeeContent() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Create Task Dialog */}
+      <Dialog open={showCreateTaskDialog} onOpenChange={setShowCreateTaskDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Create New Task</DialogTitle>
+            <DialogDescription>
+              Add a new task to your task list. Fill in the details below.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2 col-span-2">
+                <Label htmlFor="task-title">Task Title *</Label>
+                <Input
+                  id="task-title"
+                  placeholder="Enter task title"
+                  value={newTask.title}
+                  onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2 col-span-2">
+                <Label htmlFor="task-description">Description</Label>
+                <Textarea
+                  id="task-description"
+                  placeholder="Enter task description (optional)"
+                  value={newTask.description}
+                  onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
+                  rows={3}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="task-order">Order Number</Label>
+                <Input
+                  id="task-order"
+                  placeholder="e.g., #1043"
+                  value={newTask.order}
+                  onChange={(e) => setNewTask({ ...newTask, order: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="task-customer">Customer</Label>
+                <Input
+                  id="task-customer"
+                  placeholder="Enter customer name"
+                  value={newTask.customer}
+                  onChange={(e) => setNewTask({ ...newTask, customer: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="task-due-date">Due Date</Label>
+                <Input
+                  id="task-due-date"
+                  type="date"
+                  value={newTask.dueDate}
+                  onChange={(e) => setNewTask({ ...newTask, dueDate: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="task-priority">Priority</Label>
+                <Select
+                  value={newTask.priority}
+                  onValueChange={(value) => setNewTask({ ...newTask, priority: value as 'low' | 'medium' | 'high' })}
+                >
+                  <SelectTrigger id="task-priority">
+                    <SelectValue placeholder="Select priority" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="low">Low</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="high">High</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="task-estimated-hours">Estimated Hours</Label>
+                <Input
+                  id="task-estimated-hours"
+                  type="number"
+                  placeholder="e.g., 8"
+                  value={newTask.estimatedHours}
+                  onChange={(e) => setNewTask({ ...newTask, estimatedHours: e.target.value })}
+                  min="0"
+                  step="0.5"
+                />
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={handleCancelCreateTask}>
+              Cancel
+            </Button>
+            <Button onClick={handleCreateTaskSubmit}>
+              Create Task
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
@@ -457,7 +655,8 @@ function SupervisorContent() {
 }
 
 function ManagerContent() {
-  const [recentOrders] = useState([
+  const [showCreateOrderDialog, setShowCreateOrderDialog] = useState(false);
+  const [recentOrders, setRecentOrders] = useState([
     { id: '#1043', client: 'APEX Garments', project: 'Factory design', status: 'Quoted', amount: 'LKR 245,000', date: 'Oct 12, 2025' },
     { id: '#1044', client: 'Orion Tools', project: 'Customer model', status: 'In production', amount: 'LKR 1,150,000', date: 'Oct 13, 2025' },
     { id: '#1045', client: 'Ceylon Plastics', project: 'Factory design', status: 'Draft', amount: '—', date: 'Oct 14, 2025' }
@@ -468,8 +667,108 @@ function ManagerContent() {
     { id: 2, title: 'QA review for #1044', due: 'Tomorrow', priority: 'medium' }
   ]);
 
+  // Form state for create order
+  const [newOrder, setNewOrder] = useState({
+    client: '',
+    contactPerson: '',
+    email: '',
+    phone: '',
+    project: '',
+    projectType: 'Factory design' as 'Factory design' | 'Customer model' | 'Prototype' | 'Other',
+    description: '',
+    deliveryDate: '',
+    estimatedAmount: '',
+    priority: 'medium' as 'low' | 'medium' | 'high',
+    notes: ''
+  });
+
   const handleCreateOrder = () => {
-    toast.info("Create Order dialog will be added in next phase");
+    setShowCreateOrderDialog(true);
+  };
+
+  // Handle create order form submission
+  const handleCreateOrderSubmit = async () => {
+    // Validate required fields
+    if (!newOrder.client.trim()) {
+      toast.error('Please enter a client name');
+      return;
+    }
+    if (!newOrder.project.trim()) {
+      toast.error('Please enter a project name');
+      return;
+    }
+
+    try {
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      // Generate order ID
+      const orderNumber = Math.floor(1000 + Math.random() * 9000);
+      const orderId = `#${orderNumber}`;
+
+      // Format date
+      const orderDate = new Date().toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric', 
+        year: 'numeric' 
+      });
+
+      // Format amount
+      const formattedAmount = newOrder.estimatedAmount 
+        ? `LKR ${parseFloat(newOrder.estimatedAmount).toLocaleString()}`
+        : '—';
+
+      // Create new order
+      const order = {
+        id: orderId,
+        client: newOrder.client,
+        project: newOrder.project,
+        status: 'Draft',
+        amount: formattedAmount,
+        date: orderDate
+      };
+
+      setRecentOrders([order, ...recentOrders]);
+      
+      // Reset form
+      setNewOrder({
+        client: '',
+        contactPerson: '',
+        email: '',
+        phone: '',
+        project: '',
+        projectType: 'Factory design',
+        description: '',
+        deliveryDate: '',
+        estimatedAmount: '',
+        priority: 'medium',
+        notes: ''
+      });
+      
+      setShowCreateOrderDialog(false);
+      toast.success(`Order ${orderId} created successfully`);
+    } catch (error) {
+      console.error('Create order error:', error);
+      toast.error('Failed to create order. Please try again.');
+    }
+  };
+
+  // Handle cancel create order
+  const handleCancelCreateOrder = () => {
+    setNewOrder({
+      client: '',
+      contactPerson: '',
+      email: '',
+      phone: '',
+      project: '',
+      projectType: 'Factory design',
+      description: '',
+      deliveryDate: '',
+      estimatedAmount: '',
+      priority: 'medium',
+      notes: ''
+    });
+    setShowCreateOrderDialog(false);
   };
 
   const handleAssignTask = () => {
@@ -599,6 +898,183 @@ function ManagerContent() {
           ))}
         </CardContent>
       </Card>
+
+      {/* Create Order Dialog */}
+      <Dialog open={showCreateOrderDialog} onOpenChange={setShowCreateOrderDialog}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Create New Order</DialogTitle>
+            <DialogDescription>
+              Create a new order for a client. Fill in all required details below.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-6 py-4">
+            {/* Client Information */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-semibold">Client Information</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="order-client">Client Name *</Label>
+                  <Input
+                    id="order-client"
+                    placeholder="Enter client name"
+                    value={newOrder.client}
+                    onChange={(e) => setNewOrder({ ...newOrder, client: e.target.value })}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="order-contact">Contact Person</Label>
+                  <Input
+                    id="order-contact"
+                    placeholder="Enter contact person name"
+                    value={newOrder.contactPerson}
+                    onChange={(e) => setNewOrder({ ...newOrder, contactPerson: e.target.value })}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="order-email">Email</Label>
+                  <Input
+                    id="order-email"
+                    type="email"
+                    placeholder="client@example.com"
+                    value={newOrder.email}
+                    onChange={(e) => setNewOrder({ ...newOrder, email: e.target.value })}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="order-phone">Phone</Label>
+                  <Input
+                    id="order-phone"
+                    type="tel"
+                    placeholder="+94 XX XXX XXXX"
+                    value={newOrder.phone}
+                    onChange={(e) => setNewOrder({ ...newOrder, phone: e.target.value })}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Project Details */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-semibold">Project Details</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="order-project">Project Name *</Label>
+                  <Input
+                    id="order-project"
+                    placeholder="Enter project name"
+                    value={newOrder.project}
+                    onChange={(e) => setNewOrder({ ...newOrder, project: e.target.value })}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="order-type">Project Type</Label>
+                  <Select
+                    value={newOrder.projectType}
+                    onValueChange={(value) => setNewOrder({ ...newOrder, projectType: value as any })}
+                  >
+                    <SelectTrigger id="order-type">
+                      <SelectValue placeholder="Select project type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Factory design">Factory design</SelectItem>
+                      <SelectItem value="Customer model">Customer model</SelectItem>
+                      <SelectItem value="Prototype">Prototype</SelectItem>
+                      <SelectItem value="Other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2 col-span-2">
+                  <Label htmlFor="order-description">Description</Label>
+                  <Textarea
+                    id="order-description"
+                    placeholder="Enter project description"
+                    value={newOrder.description}
+                    onChange={(e) => setNewOrder({ ...newOrder, description: e.target.value })}
+                    rows={3}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Order Details */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-semibold">Order Details</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="order-delivery-date">Delivery Date</Label>
+                  <Input
+                    id="order-delivery-date"
+                    type="date"
+                    value={newOrder.deliveryDate}
+                    onChange={(e) => setNewOrder({ ...newOrder, deliveryDate: e.target.value })}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="order-amount">Estimated Amount (LKR)</Label>
+                  <Input
+                    id="order-amount"
+                    type="number"
+                    placeholder="e.g., 250000"
+                    value={newOrder.estimatedAmount}
+                    onChange={(e) => setNewOrder({ ...newOrder, estimatedAmount: e.target.value })}
+                    min="0"
+                    step="1000"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="order-priority">Priority</Label>
+                  <Select
+                    value={newOrder.priority}
+                    onValueChange={(value) => setNewOrder({ ...newOrder, priority: value as 'low' | 'medium' | 'high' })}
+                  >
+                    <SelectTrigger id="order-priority">
+                      <SelectValue placeholder="Select priority" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="low">Low</SelectItem>
+                      <SelectItem value="medium">Medium</SelectItem>
+                      <SelectItem value="high">High</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2 col-span-2">
+                  <Label htmlFor="order-notes">Additional Notes</Label>
+                  <Textarea
+                    id="order-notes"
+                    placeholder="Enter any additional notes"
+                    value={newOrder.notes}
+                    onChange={(e) => setNewOrder({ ...newOrder, notes: e.target.value })}
+                    rows={2}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={handleCancelCreateOrder}>
+              Cancel
+            </Button>
+            <Button onClick={handleCreateOrderSubmit}>
+              Create Order
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
