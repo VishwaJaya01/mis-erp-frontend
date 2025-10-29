@@ -58,15 +58,22 @@ export function Topbar({ breadcrumbs = [], onNotificationClick, unreadCount = 7 
       <div className="flex items-center gap-3">
         <div className="relative w-80">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Search..." className="pl-9" />
+          <Input placeholder="Search..." className="pl-9" aria-label="Global search" />
         </div>
         
-        <Button variant="ghost" size="icon" className="relative" onClick={onNotificationClick}>
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="relative" 
+          onClick={onNotificationClick}
+          aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
+        >
           <Bell className="h-4 w-4" />
           {unreadCount > 0 && (
             <Badge 
               variant="destructive" 
               className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
+              aria-hidden="true"
             >
               {unreadCount}
             </Badge>
@@ -75,7 +82,11 @@ export function Topbar({ breadcrumbs = [], onNotificationClick, unreadCount = 7 
         
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="relative h-9 w-9 rounded-full">
+            <Button 
+              variant="ghost" 
+              className="relative h-9 w-9 rounded-full"
+              aria-label="User menu"
+            >
               <Avatar className="h-9 w-9">
                 <AvatarImage src="" alt="User" />
                 <AvatarFallback className="bg-primary text-primary-foreground">

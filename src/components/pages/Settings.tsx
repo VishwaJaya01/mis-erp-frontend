@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AppShell } from "../layout/AppShell";
 import { Button } from "../ui/button";
 import { Label } from "../ui/label";
@@ -57,15 +57,102 @@ export function Settings() {
     teamRequests: true,
   });
 
+  // Load settings from localStorage on mount
+  useEffect(() => {
+    const savedSettings = localStorage.getItem('appSettings');
+    if (savedSettings) {
+      try {
+        const settings = JSON.parse(savedSettings);
+        
+        // General settings
+        if (settings.general) {
+          if (settings.general.theme) setTheme(settings.general.theme);
+          if (settings.general.density) setDensity(settings.general.density);
+          if (settings.general.language) setLanguage(settings.general.language);
+          if (settings.general.timezone) setTimezone(settings.general.timezone);
+          if (settings.general.weekStart) setWeekStart(settings.general.weekStart);
+          if (settings.general.showInDirectory !== undefined) setShowInDirectory(settings.general.showInDirectory);
+          if (settings.general.shareStatus !== undefined) setShareStatus(settings.general.shareStatus);
+        }
+        
+        // Work settings
+        if (settings.work) {
+          if (settings.work.defaultView) setDefaultView(settings.work.defaultView);
+          if (settings.work.showCompleted !== undefined) setShowCompleted(settings.work.showCompleted);
+          if (settings.work.autoStartTimer !== undefined) setAutoStartTimer(settings.work.autoStartTimer);
+          if (settings.work.defaultLogMode) setDefaultLogMode(settings.work.defaultLogMode);
+          if (settings.work.roundDuration) setRoundDuration(settings.work.roundDuration);
+          if (settings.work.overtimeThreshold) setOvertimeThreshold(settings.work.overtimeThreshold);
+          if (settings.work.showPendingOnly !== undefined) setShowPendingOnly(settings.work.showPendingOnly);
+          if (settings.work.autoOpenRequest !== undefined) setAutoOpenRequest(settings.work.autoOpenRequest);
+        }
+        
+        // Notification settings
+        if (settings.notifications) {
+          if (settings.notifications.emailNotifications !== undefined) setEmailNotifications(settings.notifications.emailNotifications);
+          if (settings.notifications.digestEmail) setDigestEmail(settings.notifications.digestEmail);
+          if (settings.notifications.orders) setNotifOrders(settings.notifications.orders);
+          if (settings.notifications.tasks) setNotifTasks(settings.notifications.tasks);
+          if (settings.notifications.time) setNotifTime(settings.notifications.time);
+          if (settings.notifications.leave) setNotifLeave(settings.notifications.leave);
+        }
+      } catch (error) {
+        console.error('Error loading settings:', error);
+      }
+    }
+  }, []);
+
   const handleSaveGeneral = () => {
+    const currentSettings = JSON.parse(localStorage.getItem('appSettings') || '{}');
+    const updatedSettings = {
+      ...currentSettings,
+      general: {
+        theme,
+        density,
+        language,
+        timezone,
+        weekStart,
+        showInDirectory,
+        shareStatus,
+      },
+    };
+    localStorage.setItem('appSettings', JSON.stringify(updatedSettings));
     toast.success("General settings saved");
   };
 
   const handleSaveWork = () => {
+    const currentSettings = JSON.parse(localStorage.getItem('appSettings') || '{}');
+    const updatedSettings = {
+      ...currentSettings,
+      work: {
+        defaultView,
+        showCompleted,
+        autoStartTimer,
+        defaultLogMode,
+        roundDuration,
+        overtimeThreshold,
+        showPendingOnly,
+        autoOpenRequest,
+      },
+    };
+    localStorage.setItem('appSettings', JSON.stringify(updatedSettings));
     toast.success("Work preferences saved");
   };
 
   const handleSaveNotifications = () => {
+    const currentSettings = JSON.parse(localStorage.getItem('appSettings') || '{}');
+    const updatedSettings = {
+      ...currentSettings,
+      notifications: {
+        emailNotifications,
+        digestEmail,
+        orders: notifOrders,
+        tasks: notifTasks,
+        time: notifTime,
+        leave: notifLeave,
+      },
+    };
+    localStorage.setItem('appSettings', JSON.stringify(updatedSettings));
     toast.success("Notification preferences saved");
   };
 

@@ -280,7 +280,7 @@ export function Login({ onLogin }: LoginProps) {
 
       {/* Password Recovery Modal */}
       <Dialog open={showRecovery} onOpenChange={setShowRecovery}>
-        <DialogContent>
+        <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Password recovery</DialogTitle>
             <DialogDescription>

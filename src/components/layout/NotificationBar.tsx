@@ -4,7 +4,7 @@ import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
 import { ScrollArea } from "../ui/scroll-area";
 import { Separator } from "../ui/separator";
-import { ShoppingCart, ClipboardList, Clock, Calendar, Circle } from "lucide-react";
+import { ShoppingCart, ClipboardList, Clock, Calendar, Circle, X } from "lucide-react";
 import { useRouter } from "../../lib/router";
 import { toast } from "sonner";
 
@@ -113,6 +113,12 @@ export function NotificationBar({ open, onOpenChange }: NotificationBarProps) {
   const handleMarkAllRead = () => {
     setNotifications(notifications.map((n) => ({ ...n, unread: false })));
     toast.success("All notifications marked as read");
+  };
+
+  const handleDismiss = (e: React.MouseEvent, notificationId: string) => {
+    e.stopPropagation(); // Prevent notification click
+    setNotifications(notifications.filter(n => n.id !== notificationId));
+    toast.success("Notification dismissed");
   };
 
   const handleNotificationClick = (notification: Notification) => {
@@ -260,16 +266,26 @@ export function NotificationBar({ open, onOpenChange }: NotificationBarProps) {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1">
-                          <p className="text-sm">{notification.title}</p>
+                          <p className="text-sm font-medium">{notification.title}</p>
                           <p className="text-sm text-muted-foreground">
                             {notification.description}
                           </p>
                         </div>
-                        {notification.action && (
-                          <Button variant="outline" size="sm" className="flex-shrink-0">
-                            {notification.action}
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                          {notification.action && (
+                            <Button variant="outline" size="sm">
+                              {notification.action}
+                            </Button>
+                          )}
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8"
+                            onClick={(e) => handleDismiss(e, notification.id)}
+                          >
+                            <X className="h-4 w-4" />
                           </Button>
-                        )}
+                        </div>
                       </div>
                       <p className="text-xs text-muted-foreground mt-1">
                         {notification.timestamp}
