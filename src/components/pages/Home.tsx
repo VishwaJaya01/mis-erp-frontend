@@ -37,10 +37,17 @@ import {
   CheckCircle2,
   Circle,
   Timer,
+  Loader2,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '../ui/avatar';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
+import {
+  formatDateForInput,
+  formatDateLong,
+  formatDateTime,
+} from '../../lib/dateUtils';
+import { downloadCSV } from '../../lib/exportUtils';
 
 interface HomeProps {
   role: 'Employee' | 'Supervisor' | 'Manager';
@@ -896,6 +903,7 @@ function ManagerContent() {
   const [isAssigningTask, setIsAssigningTask] = useState(false);
   const [showAssignTaskValidation, setShowAssignTaskValidation] =
     useState(false);
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
 
   // Form state for create order
   const [newOrder, setNewOrder] = useState({
@@ -1052,8 +1060,146 @@ function ManagerContent() {
     }
   };
 
-  const handleGenerateReport = () => {
-    toast.info('Generate Report feature coming soon');
+  const handleGenerateReport = async () => {
+    if (isGeneratingReport) return;
+
+    setIsGeneratingReport(true);
+    const loadingToastId = toast.loading('Preparing manager summary report...');
+
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 900));
+
+      const generatedAt = new Date();
+      const reportingPeriodStart = new Date(generatedAt);
+      reportingPeriodStart.setDate(reportingPeriodStart.getDate() - 7);
+
+      const orderStatusCounts = recentOrders.reduce<Record<string, number>>(
+        (acc, order) => {
+          acc[order.status] = (acc[order.status] || 0) + 1;
+          return acc;
+        },
+        {}
+      );
+
+      const totalOrderValue = recentOrders.reduce((acc, order) => {
+        const numericAmount = parseFloat(
+          order.amount.replace(/[^0-9.\-]/g, '')
+        );
+        return acc + (Number.isNaN(numericAmount) ? 0 : numericAmount);
+      }, 0);
+
+      const reportRows = [
+        {
+          section: 'Summary',
+          item: 'Report Generated',
+          details: formatDateTime(generatedAt),
+          status: '',
+          amount: '',
+          due: '',
+        },
+        {
+          section: 'Summary',
+          item: 'Reporting Period',
+          details: `${formatDateLong(reportingPeriodStart)} - ${formatDateLong(
+            generatedAt
+          )}`,
+          status: '',
+          amount: '',
+          due: '',
+        },
+        {
+          section: 'Summary',
+          item: 'Total Recent Orders',
+          details: String(recentOrders.length),
+          status: '',
+          amount: '',
+          due: '',
+        },
+        {
+          section: 'Summary',
+          item: 'Total Order Value',
+          details:
+            totalOrderValue > 0
+              ? `LKR ${totalOrderValue.toLocaleString()}`
+              : '—',
+          status: '',
+          amount: '',
+          due: '',
+        },
+        {
+          section: 'Summary',
+          item: 'Revenue MTD',
+          details: 'LKR 8.5M',
+          status: '',
+          amount: '',
+          due: '',
+        },
+        {
+          section: 'Summary',
+          item: 'On-time Completion',
+          details: '94.2%',
+          status: '',
+          amount: '',
+          due: '',
+        },
+        {
+          section: 'Summary',
+          item: 'Open Quotes',
+          details: '12',
+          status: '',
+          amount: '',
+          due: '',
+        },
+        ...Object.entries(orderStatusCounts).map(([status, count]) => ({
+          section: 'Orders by Status',
+          item: status,
+          details: `${count} order${count === 1 ? '' : 's'}`,
+          status,
+          amount: '',
+          due: '',
+        })),
+        ...recentOrders.map((order) => ({
+          section: 'Recent Orders',
+          item: order.id,
+          details: `${order.client} - ${order.project}`,
+          status: order.status,
+          amount: order.amount,
+          due: order.date,
+        })),
+        ...dueTasks.map((task) => ({
+          section: 'Tasks Due Soon',
+          item: task.title,
+          details: `Priority: ${task.priority
+            .charAt(0)
+            .toUpperCase()}${task.priority.slice(1)}`,
+          status: task.priority,
+          amount: '',
+          due: task.due,
+        })),
+      ];
+
+      downloadCSV(
+        reportRows,
+        `manager-report-${formatDateForInput(generatedAt)}`,
+        [
+          { key: 'section', label: 'Section' },
+          { key: 'item', label: 'Item' },
+          { key: 'details', label: 'Details' },
+          { key: 'status', label: 'Status / Priority' },
+          { key: 'amount', label: 'Amount' },
+          { key: 'due', label: 'Date / Due' },
+        ]
+      );
+
+      toast.success('Manager report downloaded', { id: loadingToastId });
+    } catch (error) {
+      console.error('Generate report error:', error);
+      toast.error('Failed to generate report. Please try again.', {
+        id: loadingToastId,
+      });
+    } finally {
+      setIsGeneratingReport(false);
+    }
   };
 
   const handleOrderClick = (orderId: string) => {
@@ -1122,8 +1268,19 @@ function ManagerContent() {
           <Button variant="secondary" onClick={handleAssignTask}>
             Assign Task
           </Button>
-          <Button variant="ghost" onClick={handleGenerateReport}>
-            Generate Report
+          <Button
+            variant="ghost"
+            onClick={handleGenerateReport}
+            disabled={isGeneratingReport}
+          >
+            {isGeneratingReport ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Generating...
+              </>
+            ) : (
+              'Generate Report'
+            )}
           </Button>
         </CardContent>
       </Card>
