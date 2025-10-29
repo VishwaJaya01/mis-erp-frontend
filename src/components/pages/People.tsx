@@ -1,68 +1,207 @@
-import { useState } from "react";
-import { AppShell } from "../layout/AppShell";
-import { Button } from "../ui/button";
-import { Input } from "../ui/input";
-import { Badge } from "../ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
-import { Label } from "../ui/label";
-import { Textarea } from "../ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
-import { Separator } from "../ui/separator";
-import { Search, Users, Calendar, LayoutGrid, List, MoreVertical } from "lucide-react";
-import { Avatar, AvatarFallback } from "../ui/avatar";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "../ui/sheet";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
-import { toast } from "sonner";
-import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
+import { useState, type ChangeEvent } from 'react';
+import { AppShell } from '../layout/AppShell';
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
+import { Badge } from '../ui/badge';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '../ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
+import { Label } from '../ui/label';
+import { Textarea } from '../ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../ui/select';
+import { Separator } from '../ui/separator';
+import {
+  Search,
+  Users,
+  Calendar,
+  LayoutGrid,
+  List,
+  MoreVertical,
+} from 'lucide-react';
+import { Avatar, AvatarFallback } from '../ui/avatar';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '../ui/sheet';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '../ui/table';
+import { toast } from 'sonner';
+import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 
 const mockEmployees = [
-  { id: "E1", name: "Nuwan", role: "Production Supervisor", dept: "Production", status: "Active", email: "nuwan@lpgeng.lk", phone: "+94 77 123 4567" },
-  { id: "E2", name: "Jayani", role: "QA Engineer", dept: "QA", status: "Active", email: "jayani@lpgeng.lk", phone: "+94 77 234 5678" },
-  { id: "E3", name: "Imesh", role: "IT Specialist", dept: "IT", status: "Active", email: "imesh@lpgeng.lk", phone: "+94 77 345 6789" },
-  { id: "E4", name: "Tharushi", role: "HR Manager", dept: "HR", status: "Active", email: "tharushi@lpgeng.lk", phone: "+94 77 456 7890" },
-  { id: "E5", name: "Kasun", role: "Production Worker", dept: "Production", status: "On leave", email: "kasun@lpgeng.lk", phone: "+94 77 567 8901" },
-  { id: "E6", name: "Dinithi", role: "Sales Executive", dept: "Sales", status: "Active", email: "dinithi@lpgeng.lk", phone: "+94 77 678 9012" },
+  {
+    id: 'E1',
+    name: 'Nuwan',
+    role: 'Production Supervisor',
+    dept: 'Production',
+    status: 'Active',
+    email: 'nuwan@lpgeng.lk',
+    phone: '+94 77 123 4567',
+  },
+  {
+    id: 'E2',
+    name: 'Jayani',
+    role: 'QA Engineer',
+    dept: 'QA',
+    status: 'Active',
+    email: 'jayani@lpgeng.lk',
+    phone: '+94 77 234 5678',
+  },
+  {
+    id: 'E3',
+    name: 'Imesh',
+    role: 'IT Specialist',
+    dept: 'IT',
+    status: 'Active',
+    email: 'imesh@lpgeng.lk',
+    phone: '+94 77 345 6789',
+  },
+  {
+    id: 'E4',
+    name: 'Tharushi',
+    role: 'HR Manager',
+    dept: 'HR',
+    status: 'Active',
+    email: 'tharushi@lpgeng.lk',
+    phone: '+94 77 456 7890',
+  },
+  {
+    id: 'E5',
+    name: 'Kasun',
+    role: 'Production Worker',
+    dept: 'Production',
+    status: 'On leave',
+    email: 'kasun@lpgeng.lk',
+    phone: '+94 77 567 8901',
+  },
+  {
+    id: 'E6',
+    name: 'Dinithi',
+    role: 'Sales Executive',
+    dept: 'Sales',
+    status: 'Active',
+    email: 'dinithi@lpgeng.lk',
+    phone: '+94 77 678 9012',
+  },
 ];
 
 const mockLeaveRequests = [
-  { id: "L1", type: "Annual", dates: "Nov 03-05, 2025", days: "3", status: "Pending", submitted: "Oct 25, 2025" },
-  { id: "L2", type: "Medical", dates: "Oct 28, 2025 (AM)", days: "0.5", status: "Approved", submitted: "Oct 27, 2025" },
-  { id: "L3", type: "Casual", dates: "Oct 20, 2025", days: "1", status: "Approved", submitted: "Oct 18, 2025" },
+  {
+    id: 'L1',
+    type: 'Annual',
+    dates: 'Nov 03-05, 2025',
+    days: '3',
+    status: 'Pending',
+    submitted: 'Oct 25, 2025',
+  },
+  {
+    id: 'L2',
+    type: 'Medical',
+    dates: 'Oct 28, 2025 (AM)',
+    days: '0.5',
+    status: 'Approved',
+    submitted: 'Oct 27, 2025',
+  },
+  {
+    id: 'L3',
+    type: 'Casual',
+    dates: 'Oct 20, 2025',
+    days: '1',
+    status: 'Approved',
+    submitted: 'Oct 18, 2025',
+  },
 ];
 
 const mockApprovals = [
-  { id: "A1", employee: "Nuwan", type: "Annual", dates: "Nov 03-05, 2025", days: "3", submitted: "Oct 25, 2025", status: "Pending" },
-  { id: "A2", employee: "Jayani", type: "Medical", dates: "Oct 28, 2025", days: "1", submitted: "Oct 27, 2025", status: "Pending" },
-  { id: "A3", employee: "Kasun", type: "Casual", dates: "Nov 01, 2025", days: "1", submitted: "Oct 26, 2025", status: "Pending" },
+  {
+    id: 'A1',
+    employee: 'Nuwan',
+    type: 'Annual',
+    dates: 'Nov 03-05, 2025',
+    days: '3',
+    submitted: 'Oct 25, 2025',
+    status: 'Pending',
+  },
+  {
+    id: 'A2',
+    employee: 'Jayani',
+    type: 'Medical',
+    dates: 'Oct 28, 2025',
+    days: '1',
+    submitted: 'Oct 27, 2025',
+    status: 'Pending',
+  },
+  {
+    id: 'A3',
+    employee: 'Kasun',
+    type: 'Casual',
+    dates: 'Nov 01, 2025',
+    days: '1',
+    submitted: 'Oct 26, 2025',
+    status: 'Pending',
+  },
 ];
 
 export function People() {
-  const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
+  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
   const [selectedEmployee, setSelectedEmployee] = useState<string | null>(null);
+  const [peopleQuery, setPeopleQuery] = useState('');
 
-  const employee = mockEmployees.find(e => e.id === selectedEmployee);
+  const employee = mockEmployees.find((e) => e.id === selectedEmployee);
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "Active": return "secondary";
-      case "On leave": return "default";
-      case "Inactive": return "outline";
-      default: return "outline";
+      case 'Active':
+        return 'secondary';
+      case 'On leave':
+        return 'default';
+      case 'Inactive':
+        return 'outline';
+      default:
+        return 'outline';
     }
   };
 
   const getLeaveStatusColor = (status: string) => {
     switch (status) {
-      case "Pending": return "default";
-      case "Approved": return "secondary";
-      case "Rejected": return "destructive";
-      default: return "outline";
+      case 'Pending':
+        return 'default';
+      case 'Approved':
+        return 'secondary';
+      case 'Rejected':
+        return 'destructive';
+      default:
+        return 'outline';
     }
   };
 
+  const pq = peopleQuery.trim().toLowerCase();
+  const filteredEmployees = pq
+    ? mockEmployees.filter((e) => {
+        return (
+          e.name.toLowerCase().includes(pq) ||
+          e.role.toLowerCase().includes(pq) ||
+          e.dept.toLowerCase().includes(pq)
+        );
+      })
+    : mockEmployees;
+
   return (
-    <AppShell activePage="people" breadcrumbs={["People"]}>
+    <AppShell activePage="people" breadcrumbs={['People']}>
       <Tabs defaultValue="team" className="space-y-6">
         <TabsList>
           <TabsTrigger value="team">Team</TabsTrigger>
@@ -76,7 +215,14 @@ export function People() {
             <div className="flex gap-3 flex-1">
               <div className="relative flex-1 max-w-md">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Search by name, role, dept..." className="pl-9" />
+                <Input
+                  placeholder="Search by name, role, dept..."
+                  className="pl-9"
+                  value={peopleQuery}
+                  onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                    setPeopleQuery(e.target.value)
+                  }
+                />
               </div>
               <Select>
                 <SelectTrigger className="w-40">
@@ -105,25 +251,25 @@ export function People() {
             </div>
             <div className="flex gap-2">
               <Button
-                variant={viewMode === "grid" ? "default" : "outline"}
+                variant={viewMode === 'grid' ? 'default' : 'outline'}
                 size="icon"
-                onClick={() => setViewMode("grid")}
+                onClick={() => setViewMode('grid')}
               >
                 <LayoutGrid className="h-4 w-4" />
               </Button>
               <Button
-                variant={viewMode === "table" ? "default" : "outline"}
+                variant={viewMode === 'table' ? 'default' : 'outline'}
                 size="icon"
-                onClick={() => setViewMode("table")}
+                onClick={() => setViewMode('table')}
               >
                 <List className="h-4 w-4" />
               </Button>
             </div>
           </div>
 
-          {viewMode === "grid" ? (
+          {viewMode === 'grid' ? (
             <div className="grid grid-cols-3 gap-4">
-              {mockEmployees.map((emp) => (
+              {filteredEmployees.map((emp) => (
                 <Card
                   key={emp.id}
                   className="cursor-pointer hover:shadow-md transition-shadow"
@@ -136,10 +282,16 @@ export function People() {
                       </Avatar>
                       <div>
                         <p>{emp.name}</p>
-                        <p className="text-sm text-muted-foreground">{emp.role}</p>
-                        <p className="text-sm text-muted-foreground">{emp.dept}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {emp.role}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {emp.dept}
+                        </p>
                       </div>
-                      <Badge variant={getStatusColor(emp.status) as any}>{emp.status}</Badge>
+                      <Badge variant={getStatusColor(emp.status) as any}>
+                        {emp.status}
+                      </Badge>
                       <div className="text-xs text-muted-foreground space-y-1 w-full">
                         <p>{emp.email}</p>
                         <p>{emp.phone}</p>
@@ -164,7 +316,7 @@ export function People() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {mockEmployees.map((emp) => (
+                  {filteredEmployees.map((emp) => (
                     <TableRow
                       key={emp.id}
                       className="cursor-pointer"
@@ -173,7 +325,9 @@ export function People() {
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <Avatar className="h-8 w-8">
-                            <AvatarFallback className="text-xs">{emp.name[0]}</AvatarFallback>
+                            <AvatarFallback className="text-xs">
+                              {emp.name[0]}
+                            </AvatarFallback>
                           </Avatar>
                           {emp.name}
                         </div>
@@ -181,7 +335,9 @@ export function People() {
                       <TableCell>{emp.role}</TableCell>
                       <TableCell>{emp.dept}</TableCell>
                       <TableCell>
-                        <Badge variant={getStatusColor(emp.status) as any}>{emp.status}</Badge>
+                        <Badge variant={getStatusColor(emp.status) as any}>
+                          {emp.status}
+                        </Badge>
                       </TableCell>
                       <TableCell className="text-sm">{emp.email}</TableCell>
                       <TableCell className="text-sm">{emp.phone}</TableCell>
@@ -261,7 +417,9 @@ export function People() {
                   </div>
 
                   <div className="flex gap-2">
-                    <Button onClick={() => toast.success("Leave request submitted")}>
+                    <Button
+                      onClick={() => toast.success('Leave request submitted')}
+                    >
                       Submit Request
                     </Button>
                     <Button variant="outline">Save as Draft</Button>
@@ -280,7 +438,9 @@ export function People() {
                   <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
                     <div>
                       <p className="text-sm">Annual Leave</p>
-                      <p className="text-xs text-muted-foreground">of 14 days</p>
+                      <p className="text-xs text-muted-foreground">
+                        of 14 days
+                      </p>
                     </div>
                     <p className="text-xl">8</p>
                   </div>
@@ -346,9 +506,17 @@ export function People() {
                       </TableCell>
                       <TableCell>{req.submitted}</TableCell>
                       <TableCell>
-                        <Button variant="ghost" size="sm">View</Button>
-                        {req.status === "Pending" && (
-                          <Button variant="ghost" size="sm" onClick={() => toast.success("Leave request cancelled")}>
+                        <Button variant="ghost" size="sm">
+                          View
+                        </Button>
+                        {req.status === 'Pending' && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() =>
+                              toast.success('Leave request cancelled')
+                            }
+                          >
                             Cancel
                           </Button>
                         )}
@@ -367,7 +535,10 @@ export function People() {
             <div className="flex gap-3 flex-1">
               <div className="relative flex-1 max-w-md">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Search employee or request ID..." className="pl-9" />
+                <Input
+                  placeholder="Search employee or request ID..."
+                  className="pl-9"
+                />
               </div>
               <Select>
                 <SelectTrigger className="w-40">
@@ -413,7 +584,9 @@ export function People() {
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <Avatar className="h-6 w-6">
-                          <AvatarFallback className="text-xs">{approval.employee[0]}</AvatarFallback>
+                          <AvatarFallback className="text-xs">
+                            {approval.employee[0]}
+                          </AvatarFallback>
                         </Avatar>
                         {approval.employee}
                       </div>
@@ -423,7 +596,9 @@ export function People() {
                     <TableCell>{approval.days}</TableCell>
                     <TableCell>{approval.submitted}</TableCell>
                     <TableCell>
-                      <Badge variant={getLeaveStatusColor(approval.status) as any}>
+                      <Badge
+                        variant={getLeaveStatusColor(approval.status) as any}
+                      >
                         {approval.status}
                       </Badge>
                     </TableCell>
@@ -431,18 +606,28 @@ export function People() {
                       <div className="flex gap-2">
                         <Button
                           size="sm"
-                          onClick={() => toast.success(`Approved leave request for ${approval.employee}`)}
+                          onClick={() =>
+                            toast.success(
+                              `Approved leave request for ${approval.employee}`
+                            )
+                          }
                         >
                           Approve
                         </Button>
                         <Button
                           size="sm"
                           variant="destructive"
-                          onClick={() => toast.error(`Declined leave request for ${approval.employee}`)}
+                          onClick={() =>
+                            toast.error(
+                              `Declined leave request for ${approval.employee}`
+                            )
+                          }
                         >
                           Decline
                         </Button>
-                        <Button variant="ghost" size="sm">View</Button>
+                        <Button variant="ghost" size="sm">
+                          View
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -454,7 +639,10 @@ export function People() {
       </Tabs>
 
       {/* Employee Profile Drawer */}
-      <Sheet open={!!selectedEmployee} onOpenChange={() => setSelectedEmployee(null)}>
+      <Sheet
+        open={!!selectedEmployee}
+        onOpenChange={() => setSelectedEmployee(null)}
+      >
         <SheetContent className="w-[500px]">
           <SheetHeader>
             <SheetTitle>Employee Profile</SheetTitle>
@@ -464,15 +652,25 @@ export function People() {
             <div className="mt-6 space-y-6">
               <div className="flex flex-col items-center text-center space-y-3">
                 <Avatar className="h-20 w-20">
-                  <AvatarFallback className="text-2xl">{employee.name[0]}</AvatarFallback>
+                  <AvatarFallback className="text-2xl">
+                    {employee.name[0]}
+                  </AvatarFallback>
                 </Avatar>
                 <div>
                   <h3>{employee.name}</h3>
-                  <p className="text-sm text-muted-foreground">{employee.role}</p>
-                  <p className="text-sm text-muted-foreground">{employee.dept}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {employee.role}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {employee.dept}
+                  </p>
                 </div>
-                <Badge variant={getStatusColor(employee.status) as any}>{employee.status}</Badge>
-                <Button variant="outline" size="sm">Edit Profile</Button>
+                <Badge variant={getStatusColor(employee.status) as any}>
+                  {employee.status}
+                </Badge>
+                <Button variant="outline" size="sm">
+                  Edit Profile
+                </Button>
               </div>
 
               <Separator />
@@ -530,14 +728,22 @@ export function People() {
                     <p className="text-sm mb-2">Recent Leave</p>
                     <div className="space-y-2">
                       {mockLeaveRequests.slice(0, 3).map((req) => (
-                        <div key={req.id} className="text-sm p-2 border rounded">
+                        <div
+                          key={req.id}
+                          className="text-sm p-2 border rounded"
+                        >
                           <div className="flex justify-between">
                             <span>{req.type}</span>
-                            <Badge variant={getLeaveStatusColor(req.status) as any} className="text-xs">
+                            <Badge
+                              variant={getLeaveStatusColor(req.status) as any}
+                              className="text-xs"
+                            >
                               {req.status}
                             </Badge>
                           </div>
-                          <p className="text-xs text-muted-foreground">{req.dates}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {req.dates}
+                          </p>
                         </div>
                       ))}
                     </div>
@@ -547,12 +753,14 @@ export function People() {
                 <TabsContent value="notes" className="space-y-4">
                   <Textarea placeholder="Add notes about this employee..." />
                   <Button size="sm">Add Note</Button>
-                  
+
                   <Separator />
-                  
+
                   <div className="space-y-2">
                     <p className="text-sm">Previous Notes</p>
-                    <p className="text-sm text-muted-foreground">No notes yet</p>
+                    <p className="text-sm text-muted-foreground">
+                      No notes yet
+                    </p>
                   </div>
                 </TabsContent>
               </Tabs>
