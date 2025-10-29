@@ -372,8 +372,7 @@ export function Work() {
   };
 
   // Filter tasks based on search term and filters
-  // Filter tasks based on search and filters
-  const filteredTasks = tasks.filter((task) => {
+  const filteredMyTasks = tasks.filter((task) => {
     const searchLower = debouncedSearchTerm.toLowerCase();
     const matchesSearch =
       task.title.toLowerCase().includes(searchLower) ||
@@ -392,18 +391,56 @@ export function Work() {
     return matchesSearch && matchesStatus && matchesPriority;
   });
 
-  const kanbanColumns = {
-    unassigned: filteredTasks.filter((t) => !t.assignee),
-    inprogress: filteredTasks.filter((t) => t.status === 'In progress'),
-    qa: [],
-    completed: filteredTasks.filter((t) => t.status === 'Done'),
+  const normalizedAllJobsAssigneeFilter = allJobsAssigneeFilter.toLowerCase();
+
+  const filteredAllJobsTasks = tasks.filter((task) => {
+    const normalizedStatus = task.status.toLowerCase().replace(/\s+/g, '');
+
+    const matchesStatus = (() => {
+      switch (allJobsStatusFilter) {
+        case 'all':
+          return true;
+        case 'unassigned':
+          return !task.assignee;
+        case 'inprogress':
+          return normalizedStatus === 'inprogress';
+        case 'qa':
+          return normalizedStatus === 'qa';
+        case 'completed':
+          return (
+            normalizedStatus === 'completed' || normalizedStatus === 'done'
+          );
+        default:
+          return true;
+      }
+    })();
+
+    const matchesAssignee =
+      normalizedAllJobsAssigneeFilter === 'all' ||
+      (task.assignee &&
+        task.assignee.toLowerCase() === normalizedAllJobsAssigneeFilter);
+
+    return matchesStatus && matchesAssignee;
+  });
+
+  const allJobsKanbanColumns = {
+    unassigned: filteredAllJobsTasks.filter((t) => !t.assignee),
+    inprogress: filteredAllJobsTasks.filter(
+      (t) => t.status.toLowerCase().replace(/\s+/g, '') === 'inprogress'
+    ),
+    qa: filteredAllJobsTasks.filter(
+      (t) => t.status.toLowerCase().replace(/\s+/g, '') === 'qa'
+    ),
+    completed: filteredAllJobsTasks.filter((t) =>
+      ['done', 'completed'].includes(t.status.toLowerCase().replace(/\s+/g, ''))
+    ),
   };
 
   // Export button handler using async
   const { isLoading: isExporting, handleClick: handleExportClick } =
     useAsyncButton(
       async () => {
-        if (filteredTasks.length === 0) {
+        if (filteredMyTasks.length === 0) {
           throw new Error('No tasks to export');
         }
 
@@ -421,14 +458,14 @@ export function Work() {
 
         await new Promise((resolve) => setTimeout(resolve, 500)); // Simulate export delay
         exportTableData(
-          filteredTasks,
+          filteredMyTasks,
           `tasks-${new Date().toISOString().split('T')[0]}`,
           'csv',
           columns
         );
       },
       {
-        successMessage: `Successfully exported ${filteredTasks.length} tasks`,
+        successMessage: `Successfully exported ${filteredMyTasks.length} tasks`,
         errorMessage: 'Failed to export tasks. Please try again.',
       }
     );
@@ -532,7 +569,7 @@ export function Work() {
           <Card>
             <CardContent className="pt-6">
               <div className="space-y-2">
-                {filteredTasks.map((task) => (
+                {filteredMyTasks.map((task) => (
                   <div
                     key={task.id}
                     className="flex items-center gap-3 p-3 rounded-lg border hover:bg-muted/50 cursor-pointer"
@@ -622,7 +659,7 @@ export function Work() {
                     </DropdownMenu>
                   </div>
                 ))}
-                {filteredTasks.length === 0 && (
+                {filteredMyTasks.length === 0 && (
                   <div className="text-center py-12 text-muted-foreground">
                     <p>No tasks match your filters</p>
                   </div>
@@ -690,11 +727,11 @@ export function Work() {
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm">Unassigned</CardTitle>
                   <CardDescription>
-                    {kanbanColumns.unassigned.length} tasks
+                    {allJobsKanbanColumns.unassigned.length} tasks
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-2">
-                  {kanbanColumns.unassigned.map((task) => (
+                  {allJobsKanbanColumns.unassigned.map((task) => (
                     <Card
                       key={task.id}
                       className="cursor-pointer hover:shadow-md transition-shadow group"
@@ -763,11 +800,11 @@ export function Work() {
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm">In Progress</CardTitle>
                   <CardDescription>
-                    {kanbanColumns.inprogress.length} tasks
+                    {allJobsKanbanColumns.inprogress.length} tasks
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-2">
-                  {kanbanColumns.inprogress.map((task) => (
+                  {allJobsKanbanColumns.inprogress.map((task) => (
                     <Card
                       key={task.id}
                       className="cursor-pointer hover:shadow-md transition-shadow group"
@@ -847,9 +884,69 @@ export function Work() {
               <Card>
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm">QA</CardTitle>
-                  <CardDescription>0 tasks</CardDescription>
+                  <CardDescription>
+                    {allJobsKanbanColumns.qa.length} tasks
+                  </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="space-y-2">
+                  {allJobsKanbanColumns.qa.map((task) => (
+                    <Card
+                      key={task.id}
+                      className="cursor-pointer hover:shadow-md transition-shadow group"
+                    >
+                      <CardContent className="p-3 space-y-2">
+                        <div className="flex items-start gap-2">
+                          <div
+                            className={`h-2 w-2 rounded-full mt-1 ${getPriorityColor(
+                              task.priority
+                            )}`}
+                          />
+                          <p className="text-sm flex-1">{task.title}</p>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 opacity-0 group-hover:opacity-100"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <MoreVertical className="h-3 w-3" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  updateTaskStatus(task.id, 'In progress')
+                                }
+                              >
+                                Move to In Progress
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  updateTaskStatus(task.id, 'Done')
+                                }
+                              >
+                                Move to Done
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          {task.order} • {task.customer}
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <Avatar className="h-5 w-5">
+                            <AvatarFallback className="text-xs">
+                              {task.assignee ? task.assignee[0] : '?'}
+                            </AvatarFallback>
+                          </Avatar>
+                          <Badge variant="outline" className="text-xs">
+                            {task.due}
+                          </Badge>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
                   <Button
                     variant="ghost"
                     size="sm"
@@ -866,11 +963,11 @@ export function Work() {
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm">Completed</CardTitle>
                   <CardDescription>
-                    {kanbanColumns.completed.length} tasks
+                    {allJobsKanbanColumns.completed.length} tasks
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-2">
-                  {kanbanColumns.completed.map((task) => (
+                  {allJobsKanbanColumns.completed.map((task) => (
                     <Card
                       key={task.id}
                       className="cursor-pointer hover:shadow-md transition-shadow group"
@@ -956,7 +1053,7 @@ export function Work() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {mockTasks.map((task) => (
+                  {filteredAllJobsTasks.map((task) => (
                     <TableRow
                       key={task.id}
                       className="hover:bg-muted/50 transition-colors"
@@ -997,6 +1094,15 @@ export function Work() {
                       </TableCell>
                     </TableRow>
                   ))}
+                  {filteredAllJobsTasks.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={8} className="text-center py-8">
+                        <span className="text-sm text-muted-foreground">
+                          No jobs match the selected filters
+                        </span>
+                      </TableCell>
+                    </TableRow>
+                  )}
                 </TableBody>
               </Table>
             </Card>
