@@ -16,6 +16,7 @@ import { Checkbox } from "../ui/checkbox";
 import { Switch } from "../ui/switch";
 import { toast } from "sonner";
 import { Textarea } from "../ui/textarea";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "../ui/dropdown-menu";
 
 const mockUsers = [
   { id: "U1", name: "Nuwan", email: "nuwan@lpgeng.lk", role: "Supervisor", dept: "Production", status: "Active", lastActive: "2 mins ago" },
@@ -41,15 +42,112 @@ export function Admin() {
   const [showInvite, setShowInvite] = useState(false);
   const [selectedRole, setSelectedRole] = useState("admin");
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  
+  // User management filters
+  const [userSearchTerm, setUserSearchTerm] = useState("");
+  const [userRoleFilter, setUserRoleFilter] = useState("all");
+  const [userDeptFilter, setUserDeptFilter] = useState("all");
+  const [userStatusFilter, setUserStatusFilter] = useState("all");
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "Active": return "secondary";
-      case "Invited": return "default";
-      case "Suspended": return "destructive";
-      case "Deactivated": return "outline";
+      case "Active": return "secondary"; // Success state (green)
+      case "Invited": return "default"; // Warning/Pending state (blue)
+      case "Suspended": return "destructive"; // Error state (red)
+      case "Deactivated": return "outline"; // Neutral state (gray)
       default: return "outline";
     }
+  };
+
+  const handleImportCSV = async () => {
+    try {
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      
+      toast.info("CSV import dialog would open here");
+    } catch (error) {
+      console.error("Import CSV error:", error);
+      toast.error("Failed to import CSV. Please try again.");
+    }
+  };
+
+  const handleUserAction = async (userId: string, action: string) => {
+    try {
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      
+      switch (action) {
+        case "edit":
+          toast.info(`Edit user ${userId}`);
+          break;
+        case "suspend":
+          toast.warning(`User ${userId} suspended`);
+          break;
+        case "delete":
+          toast.error(`User ${userId} deleted`);
+          break;
+        case "resetPassword":
+          toast.success(`Password reset email sent to user ${userId}`);
+          break;
+        default:
+          break;
+      }
+    } catch (error) {
+      console.error(`User action ${action} error:`, error);
+      toast.error(`Failed to perform action. Please try again.`);
+    }
+  };
+
+  const handleExportUsers = async () => {
+    try {
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      
+      toast.success("Users exported to CSV");
+    } catch (error) {
+      console.error("Export users error:", error);
+      toast.error("Failed to export users. Please try again.");
+    }
+  };
+
+  const handleExportOrders = async () => {
+    try {
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      
+      toast.success("Orders exported to CSV");
+    } catch (error) {
+      console.error("Export orders error:", error);
+      toast.error("Failed to export orders. Please try again.");
+    }
+  };
+
+  const handleExportAuditLog = async () => {
+    try {
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      
+      toast.success("Audit log exported to CSV");
+    } catch (error) {
+      console.error("Export audit log error:", error);
+      toast.error("Failed to export audit log. Please try again.");
+    }
+  };
+
+  const handleSaveSystemSettings = async () => {
+    try {
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      
+      toast.success("System settings saved successfully");
+    } catch (error) {
+      console.error("Save system settings error:", error);
+      toast.error("Failed to save system settings. Please try again.");
+    }
+  };
+
+  const handleDiscardSystemChanges = () => {
+    toast.info("Changes discarded");
   };
 
   return (
@@ -68,9 +166,14 @@ export function Admin() {
             <div className="flex gap-3 flex-1">
               <div className="relative flex-1 max-w-md">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Search by name, email, role..." className="pl-9" />
+                <Input 
+                  placeholder="Search by name, email, role..." 
+                  className="pl-9"
+                  value={userSearchTerm}
+                  onChange={(e) => setUserSearchTerm(e.target.value)}
+                />
               </div>
-              <Select>
+              <Select value={userRoleFilter} onValueChange={setUserRoleFilter}>
                 <SelectTrigger className="w-40">
                   <SelectValue placeholder="Role" />
                 </SelectTrigger>
@@ -83,7 +186,7 @@ export function Admin() {
                   <SelectItem value="hr">HR</SelectItem>
                 </SelectContent>
               </Select>
-              <Select>
+              <Select value={userDeptFilter} onValueChange={setUserDeptFilter}>
                 <SelectTrigger className="w-40">
                   <SelectValue placeholder="Department" />
                 </SelectTrigger>
@@ -96,7 +199,7 @@ export function Admin() {
                   <SelectItem value="it">IT</SelectItem>
                 </SelectContent>
               </Select>
-              <Select>
+              <Select value={userStatusFilter} onValueChange={setUserStatusFilter}>
                 <SelectTrigger className="w-40">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
@@ -109,7 +212,7 @@ export function Admin() {
               </Select>
             </div>
             <div className="flex gap-2">
-              <Button variant="ghost">
+              <Button variant="ghost" onClick={handleImportCSV}>
                 <Upload className="h-4 w-4 mr-2" />
                 Import CSV
               </Button>
@@ -152,9 +255,31 @@ export function Admin() {
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">{user.lastActive}</TableCell>
                     <TableCell>
-                      <Button variant="ghost" size="icon">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleUserAction(user.id, "edit")}>
+                            Edit Details
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleUserAction(user.id, "resetPassword")}>
+                            Reset Password
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => handleUserAction(user.id, "suspend")}>
+                            Suspend User
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={() => handleUserAction(user.id, "delete")}
+                            className="text-destructive"
+                          >
+                            Delete User
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -412,15 +537,30 @@ export function Admin() {
                 <div>
                   <p className="text-sm mb-2">Export Data</p>
                   <div className="space-y-2">
-                    <Button variant="outline" size="sm" className="w-full justify-start">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="w-full justify-start"
+                      onClick={handleExportUsers}
+                    >
                       <Download className="h-4 w-4 mr-2" />
                       Export Users CSV
                     </Button>
-                    <Button variant="outline" size="sm" className="w-full justify-start">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="w-full justify-start"
+                      onClick={handleExportOrders}
+                    >
                       <Download className="h-4 w-4 mr-2" />
                       Export Orders CSV
                     </Button>
-                    <Button variant="outline" size="sm" className="w-full justify-start">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="w-full justify-start"
+                      onClick={handleExportAuditLog}
+                    >
                       <Download className="h-4 w-4 mr-2" />
                       Export Audit Log CSV
                     </Button>
@@ -453,8 +593,8 @@ export function Admin() {
 
           {/* Save Bar */}
           <div className="sticky bottom-0 bg-card border-t p-4 -mx-6 -mb-6 flex justify-end gap-2">
-            <Button variant="outline">Discard Changes</Button>
-            <Button onClick={() => toast.success("Settings saved successfully")}>
+            <Button variant="outline" onClick={handleDiscardSystemChanges}>Discard Changes</Button>
+            <Button onClick={handleSaveSystemSettings}>
               Save Settings
             </Button>
           </div>
@@ -572,7 +712,7 @@ export function Admin() {
 
       {/* Invite User Dialog */}
       <Dialog open={showInvite} onOpenChange={setShowInvite}>
-        <DialogContent>
+        <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Invite User</DialogTitle>
             <DialogDescription>Send an invitation to join LPG Engineering</DialogDescription>

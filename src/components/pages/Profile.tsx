@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AppShell } from "../layout/AppShell";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
@@ -13,7 +13,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Separator } from "../ui/separator";
 import { toast } from "sonner";
 import { useRouter } from "../../lib/router";
-import { Upload, Monitor, Smartphone } from "lucide-react";
+import { Upload, Monitor, Smartphone, Edit2, X, Check } from "lucide-react";
 
 const mockSessions = [
   { id: "1", device: "Windows · Chrome", location: "Colombo, LK", lastActive: "Active now" },
@@ -23,8 +23,11 @@ const mockSessions = [
 
 export function Profile() {
   const { userRole } = useRouter();
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [fullName, setFullName] = useState("Kasun Perera");
   const [phone, setPhone] = useState("+94 77 123 4567");
+  const [originalFullName, setOriginalFullName] = useState("Kasun Perera");
+  const [originalPhone, setOriginalPhone] = useState("+94 77 123 4567");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -34,11 +37,76 @@ export function Profile() {
   const [dateFormat, setDateFormat] = useState("dmy");
   const [showSignOutDialog, setShowSignOutDialog] = useState(false);
 
-  const handleSaveProfile = () => {
-    toast.success("Profile updated successfully");
+  // Load profile from localStorage on mount
+  useEffect(() => {
+    const savedProfile = localStorage.getItem('userProfile');
+    if (savedProfile) {
+      try {
+        const profile = JSON.parse(savedProfile);
+        if (profile.fullName) {
+          setFullName(profile.fullName);
+          setOriginalFullName(profile.fullName);
+        }
+        if (profile.phone) {
+          setPhone(profile.phone);
+          setOriginalPhone(profile.phone);
+        }
+      } catch (error) {
+        console.error('Error loading profile:', error);
+      }
+    }
+  }, []);
+
+  const handleEditProfile = () => {
+    setIsEditingProfile(true);
   };
 
-  const handleUpdatePassword = () => {
+  const handleCancelEdit = () => {
+    setFullName(originalFullName);
+    setPhone(originalPhone);
+    setIsEditingProfile(false);
+  };
+
+  const handleSaveProfile = async () => {
+    // Validation
+    if (!fullName.trim()) {
+      toast.error("Full name is required");
+      return;
+    }
+    if (!phone.trim()) {
+      toast.error("Phone number is required");
+      return;
+    }
+    
+    // Phone validation (Sri Lankan format)
+    const phoneRegex = /^\+94\s?7[0-9]\s?[0-9]{3}\s?[0-9]{4}$/;
+    if (!phoneRegex.test(phone)) {
+      toast.error("Please enter a valid Sri Lankan phone number (+94 7X XXX XXXX)");
+      return;
+    }
+
+    try {
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      
+      // Save to localStorage
+      const profileData = {
+        fullName,
+        phone,
+      };
+      localStorage.setItem('userProfile', JSON.stringify(profileData));
+      
+      setOriginalFullName(fullName);
+      setOriginalPhone(phone);
+      setIsEditingProfile(false);
+      toast.success("Profile updated successfully");
+    } catch (error) {
+      console.error("Save profile error:", error);
+      toast.error("Failed to update profile. Please try again.");
+    }
+  };
+
+  const handleUpdatePassword = async () => {
     if (newPassword !== confirmPassword) {
       toast.error("Passwords don't match");
       return;
@@ -47,23 +115,57 @@ export function Profile() {
       toast.error("Password must be at least 8 characters");
       return;
     }
-    toast.success("Password updated successfully");
-    setCurrentPassword("");
-    setNewPassword("");
-    setConfirmPassword("");
+
+    try {
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      
+      toast.success("Password updated successfully");
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (error) {
+      console.error("Update password error:", error);
+      toast.error("Failed to update password. Please try again.");
+    }
   };
 
-  const handleSavePreferences = () => {
-    toast.success("Preferences saved");
+  const handleSavePreferences = async () => {
+    try {
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      
+      toast.success("Preferences saved");
+    } catch (error) {
+      console.error("Save preferences error:", error);
+      toast.error("Failed to save preferences. Please try again.");
+    }
   };
 
-  const handleSignOutDevice = (deviceId: string) => {
-    toast.success("Signed out of device");
+  const handleSignOutDevice = async (deviceId: string) => {
+    try {
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      
+      toast.success("Signed out of device");
+    } catch (error) {
+      console.error("Sign out device error:", error);
+      toast.error("Failed to sign out of device. Please try again.");
+    }
   };
 
-  const handleSignOutAll = () => {
-    setShowSignOutDialog(false);
-    toast.success("Signed out of all devices except this one");
+  const handleSignOutAll = async () => {
+    try {
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      
+      setShowSignOutDialog(false);
+      toast.success("Signed out of all devices except this one");
+    } catch (error) {
+      console.error("Sign out all devices error:", error);
+      toast.error("Failed to sign out of all devices. Please try again.");
+      setShowSignOutDialog(false);
+    }
   };
 
   return (
@@ -83,8 +185,18 @@ export function Profile() {
             {/* Personal Information */}
             <Card>
               <CardHeader>
-                <CardTitle>Personal Information</CardTitle>
-                <CardDescription>Update your personal details</CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Personal Information</CardTitle>
+                    <CardDescription>Update your personal details</CardDescription>
+                  </div>
+                  {!isEditingProfile && (
+                    <Button variant="outline" size="sm" onClick={handleEditProfile}>
+                      <Edit2 className="h-4 w-4 mr-2" />
+                      Edit
+                    </Button>
+                  )}
+                </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
@@ -94,6 +206,8 @@ export function Profile() {
                       id="fullName"
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
+                      disabled={!isEditingProfile}
+                      className={!isEditingProfile ? "bg-muted" : ""}
                     />
                   </div>
                   <div className="space-y-2">
@@ -117,6 +231,8 @@ export function Profile() {
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                       placeholder="+94 7X XXX XXXX"
+                      disabled={!isEditingProfile}
+                      className={!isEditingProfile ? "bg-muted" : ""}
                     />
                   </div>
                   <div className="space-y-2">
@@ -151,11 +267,21 @@ export function Profile() {
                   </div>
                 </div>
 
-                <Separator />
-
-                <div className="flex justify-end">
-                  <Button onClick={handleSaveProfile}>Save changes</Button>
-                </div>
+                {isEditingProfile && (
+                  <>
+                    <Separator />
+                    <div className="flex justify-end gap-2">
+                      <Button variant="outline" onClick={handleCancelEdit}>
+                        <X className="h-4 w-4 mr-2" />
+                        Cancel
+                      </Button>
+                      <Button onClick={handleSaveProfile}>
+                        <Check className="h-4 w-4 mr-2" />
+                        Save changes
+                      </Button>
+                    </div>
+                  </>
+                )}
               </CardContent>
             </Card>
 

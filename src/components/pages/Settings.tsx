@@ -102,58 +102,85 @@ export function Settings() {
     }
   }, []);
 
-  const handleSaveGeneral = () => {
-    const currentSettings = JSON.parse(localStorage.getItem('appSettings') || '{}');
-    const updatedSettings = {
-      ...currentSettings,
-      general: {
-        theme,
-        density,
-        language,
-        timezone,
-        weekStart,
-        showInDirectory,
-        shareStatus,
-      },
-    };
-    localStorage.setItem('appSettings', JSON.stringify(updatedSettings));
-    toast.success("General settings saved");
+  const handleSaveGeneral = async () => {
+    try {
+      const currentSettings = JSON.parse(localStorage.getItem('appSettings') || '{}');
+      const updatedSettings = {
+        ...currentSettings,
+        general: {
+          theme,
+          density,
+          language,
+          timezone,
+          weekStart,
+          showInDirectory,
+          shareStatus,
+        },
+      };
+      
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      
+      localStorage.setItem('appSettings', JSON.stringify(updatedSettings));
+      toast.success("General settings saved");
+    } catch (error) {
+      console.error("Save general settings error:", error);
+      toast.error("Failed to save general settings. Please try again.");
+    }
   };
 
-  const handleSaveWork = () => {
-    const currentSettings = JSON.parse(localStorage.getItem('appSettings') || '{}');
-    const updatedSettings = {
-      ...currentSettings,
-      work: {
-        defaultView,
-        showCompleted,
-        autoStartTimer,
-        defaultLogMode,
-        roundDuration,
-        overtimeThreshold,
-        showPendingOnly,
-        autoOpenRequest,
-      },
-    };
-    localStorage.setItem('appSettings', JSON.stringify(updatedSettings));
-    toast.success("Work preferences saved");
+  const handleSaveWork = async () => {
+    try {
+      const currentSettings = JSON.parse(localStorage.getItem('appSettings') || '{}');
+      const updatedSettings = {
+        ...currentSettings,
+        work: {
+          defaultView,
+          showCompleted,
+          autoStartTimer,
+          defaultLogMode,
+          roundDuration,
+          overtimeThreshold,
+          showPendingOnly,
+          autoOpenRequest,
+        },
+      };
+      
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      
+      localStorage.setItem('appSettings', JSON.stringify(updatedSettings));
+      toast.success("Work preferences saved");
+    } catch (error) {
+      console.error("Save work preferences error:", error);
+      toast.error("Failed to save work preferences. Please try again.");
+    }
   };
 
-  const handleSaveNotifications = () => {
-    const currentSettings = JSON.parse(localStorage.getItem('appSettings') || '{}');
-    const updatedSettings = {
-      ...currentSettings,
-      notifications: {
-        emailNotifications,
-        digestEmail,
-        orders: notifOrders,
-        tasks: notifTasks,
-        time: notifTime,
-        leave: notifLeave,
-      },
-    };
-    localStorage.setItem('appSettings', JSON.stringify(updatedSettings));
-    toast.success("Notification preferences saved");
+  const handleSaveNotifications = async () => {
+    try {
+      const currentSettings = JSON.parse(localStorage.getItem('appSettings') || '{}');
+      const updatedSettings = {
+        ...currentSettings,
+        notifications: {
+          emailNotifications,
+          digestEmail,
+          orders: notifOrders,
+          tasks: notifTasks,
+          time: notifTime,
+          leave: notifLeave,
+        },
+      };
+      
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      
+      localStorage.setItem('appSettings', JSON.stringify(updatedSettings));
+      toast.success("Notification preferences saved");
+    } catch (error) {
+      console.error("Save notification preferences error:", error);
+      toast.error("Failed to save notification preferences. Please try again.");
+    }
   };
 
   return (

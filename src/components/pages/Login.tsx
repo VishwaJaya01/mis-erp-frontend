@@ -55,11 +55,21 @@ export function Login({ onLogin }: LoginProps) {
       return;
     }
 
-    setIsLoading(true);
-    
-    // Simulate login
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      setIsLoading(true);
+      
+      // Simulate login API call
+      await new Promise((resolve, reject) => {
+        setTimeout(() => {
+          // Simulate random error for testing (5% chance)
+          if (Math.random() < 0.05) {
+            reject(new Error("Network error"));
+          } else {
+            resolve(true);
+          }
+        }, 1500);
+      });
+
       // Mock: different roles based on email
       if (email.includes("manager") || email.includes("admin")) {
         onLogin("Manager");
@@ -68,14 +78,30 @@ export function Login({ onLogin }: LoginProps) {
       } else {
         onLogin("Employee");
       }
-    }, 1500);
+    } catch (error) {
+      console.error("Login error:", error);
+      toast.error(error instanceof Error ? error.message : "Login failed. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handlePasswordRecovery = () => {
-    if (validateEmail(recoveryEmail)) {
+  const handlePasswordRecovery = async () => {
+    if (!validateEmail(recoveryEmail)) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
+
+    try {
+      // Simulate API call for password recovery
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      
       toast.success(`Reset link sent to ${recoveryEmail}`);
       setShowRecovery(false);
       setRecoveryEmail("");
+    } catch (error) {
+      console.error("Password recovery error:", error);
+      toast.error("Failed to send reset link. Please try again.");
     }
   };
 
