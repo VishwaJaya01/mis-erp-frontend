@@ -13,7 +13,7 @@ import { Textarea } from "../ui/textarea";
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { Separator } from "../ui/separator";
-import { Search, Download, Plus, MoreVertical, Upload, FileText, Trash2, Eye, Edit, Copy, Ban } from "lucide-react";
+import { Search, Download, Plus, MoreVertical, Upload, FileText, Trash2, Eye, Edit, Copy, Ban, Loader2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,6 +24,10 @@ import {
 import { toast } from "sonner";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
 import { useRouter } from "../../lib/router";
+import { useDebounce } from "../../lib/hooks";
+import { formatDateShort } from "../../lib/dateUtils";
+import { exportTableData } from "../../lib/exportUtils";
+import { notify, notifyError } from "../../lib/notificationUtils";
 
 const mockOrders = [
   { id: "#1043", customer: "APEX Garments", type: "Factory design", status: "Quoted", quote: "LKR 245,000", created: "Oct 12, 2025" },
@@ -51,8 +55,233 @@ export function Orders() {
   const { userRole, permissions } = useRouter();
   const [selectedOrder, setSelectedOrder] = useState<string | null>(null);
   const [showNewOrder, setShowNewOrder] = useState(false);
+  const [showEditOrder, setShowEditOrder] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedRows, setSelectedRows] = useState<string[]>([]);
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [typeFilter, setTypeFilter] = useState("all");
+  
+  // Debounced search term
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
+  
+  // New Order form state
+  const [newOrderCustomer, setNewOrderCustomer] = useState("");
+  const [newOrderType, setNewOrderType] = useState("factory");
+  const [newOrderNotes, setNewOrderNotes] = useState("");
+
+  // Edit Order form state
+  const [editOrderCustomer, setEditOrderCustomer] = useState("");
+  const [editOrderType, setEditOrderType] = useState("");
+  const [editOrderStatus, setEditOrderStatus] = useState("");
+  const [editOrderNotes, setEditOrderNotes] = useState("");
+
+  // Validation and loading states
+  const [isCreatingOrder, setIsCreatingOrder] = useState(false);
+  const [isSavingOrder, setIsSavingOrder] = useState(false);
+  const [showNewOrderValidation, setShowNewOrderValidation] = useState(false);
+  const [showEditOrderValidation, setShowEditOrderValidation] = useState(false);
+
+  // Reset form when dialog closes
+  const handleCloseNewOrder = () => {
+    setShowNewOrder(false);
+    setNewOrderCustomer("");
+    setNewOrderType("factory");
+    setNewOrderNotes("");
+    setShowNewOrderValidation(false);
+  };
+
+  const handleCreateOrder = async () => {
+    // Show validation messages
+    setShowNewOrderValidation(true);
+
+    // Validate required fields
+    if (!newOrderCustomer || !newOrderType) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+
+    // Simulate async operation
+    setIsCreatingOrder(true);
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      toast.success("Order created successfully");
+      handleCloseNewOrder();
+    } catch (error) {
+      toast.error("Failed to create order");
+    } finally {
+      setIsCreatingOrder(false);
+    }
+  };
+
+  const handleOpenEditOrder = () => {
+    if (order) {
+      setEditOrderCustomer(order.customer);
+      setEditOrderType(order.type);
+      setEditOrderStatus(order.status);
+      setEditOrderNotes("");
+      setShowEditOrder(true);
+    }
+  };
+
+  const handleCloseEditOrder = () => {
+    setShowEditOrder(false);
+    setEditOrderCustomer("");
+    setEditOrderType("");
+    setEditOrderStatus("");
+    setEditOrderNotes("");
+    setShowEditOrderValidation(false);
+  };
+
+  const handleSaveEditOrder = async () => {
+    // Show validation messages
+    setShowEditOrderValidation(true);
+
+    // Validate required fields
+    if (!editOrderCustomer.trim()) {
+      notifyError.validation("Customer name is required");
+      return;
+    }
+
+    // Simulate async operation
+    setIsSavingOrder(true);
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      notify.updated("Order", selectedOrder || undefined);
+      handleCloseEditOrder();
+      setSelectedOrder(null);
+    } catch (error) {
+      notifyError.generic("update order");
+    } finally {
+      setIsSavingOrder(false);
+    }
+  };
+
+  // Bulk action handlers
+  const handleSelectAll = () => {
+    if (selectedRows.length === filteredOrders.length) {
+      setSelectedRows([]);
+      toast.info("Deselected all orders");
+    } else {
+      setSelectedRows(filteredOrders.map(order => order.id));
+      toast.success(`Selected ${filteredOrders.length} orders`);
+    }
+  };
+
+  const handleToggleRow = (orderId: string) => {
+    setSelectedRows(prev => 
+      prev.includes(orderId) 
+        ? prev.filter(id => id !== orderId)
+        : [...prev, orderId]
+    );
+  };
+
+  const handleBulkExport = async () => {
+    if (selectedRows.length === 0) {
+      notifyError.validation("Please select orders to export");
+      return;
+    }
+
+    try {
+      // Get selected orders
+      const ordersToExport = mockOrders.filter(order => 
+        selectedRows.includes(order.id)
+      );
+
+      // Define columns for export
+      const columns = [
+        { key: 'id' as const, label: 'Order ID' },
+        { key: 'customer' as const, label: 'Customer' },
+        { key: 'type' as const, label: 'Order Type' },
+        { key: 'status' as const, label: 'Status' },
+        { key: 'quote' as const, label: 'Quote Amount' },
+        { key: 'created' as const, label: 'Created Date' },
+      ];
+
+      // Export as CSV
+      exportTableData(
+        ordersToExport,
+        `orders-export-${new Date().toISOString().split('T')[0]}`,
+        'csv',
+        columns
+      );
+      
+      notify.exported(selectedRows.length, 'order');
+      setSelectedRows([]);
+    } catch (error) {
+      console.error("Bulk export error:", error);
+      notifyError.generic("export orders");
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedRows.length === 0) {
+      notifyError.validation("Please select orders to delete");
+      return;
+    }
+
+    try {
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      
+      notify.bulkAction("Deleted", selectedRows.length, "order");
+      setSelectedRows([]);
+    } catch (error) {
+      console.error("Bulk delete error:", error);
+      notifyError.generic("delete orders");
+    }
+  };
+
+  const handleBulkStatusChange = async (newStatus: string) => {
+    if (selectedRows.length === 0) {
+      notifyError.validation("Please select orders to update");
+      return;
+    }
+
+    try {
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      
+      notify.statusChanged("order", newStatus, selectedRows.length);
+      setSelectedRows([]);
+    } catch (error) {
+      console.error("Bulk status change error:", error);
+      notifyError.generic("update order status");
+    }
+  };
+
+  const handleExportAll = () => {
+    try {
+      if (filteredOrders.length === 0) {
+        notifyError.validation("No orders to export");
+        return;
+      }
+
+      // Define columns for export
+      const columns = [
+        { key: 'id' as const, label: 'Order ID' },
+        { key: 'customer' as const, label: 'Customer' },
+        { key: 'type' as const, label: 'Order Type' },
+        { key: 'status' as const, label: 'Status' },
+        { key: 'quote' as const, label: 'Quote Amount' },
+        { key: 'created' as const, label: 'Created Date' },
+      ];
+
+      // Export filtered orders as CSV
+      exportTableData(
+        filteredOrders,
+        `orders-${new Date().toISOString().split('T')[0]}`,
+        'csv',
+        columns
+      );
+      
+      notify.exported(filteredOrders.length, 'order');
+    } catch (error) {
+      console.error("Export error:", error);
+      notifyError.generic("export orders");
+    }
+  };
 
   const handleRowClick = (orderId: string) => {
     setSelectedOrder(orderId);
@@ -64,13 +293,33 @@ export function Orders() {
 
   const order = mockOrders.find(o => o.id === selectedOrder);
 
+  // Filter orders based on search term and filters
+  // Filter orders based on search and filters
+  const filteredOrders = mockOrders.filter(order => {
+    const searchLower = debouncedSearchTerm.toLowerCase();
+    const matchesSearch = (
+      order.id.toLowerCase().includes(searchLower) ||
+      order.customer.toLowerCase().includes(searchLower)
+    );
+    
+    const matchesStatus = statusFilter === "all" || 
+      order.status.toLowerCase() === statusFilter.toLowerCase() ||
+      (statusFilter === "production" && order.status === "In production");
+    
+    const matchesType = typeFilter === "all" || 
+      (typeFilter === "customer" && order.type === "Customer model") ||
+      (typeFilter === "factory" && order.type === "Factory design");
+    
+    return matchesSearch && matchesStatus && matchesType;
+  });
+
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "Quoted": return "secondary";
-      case "In production": return "default";
-      case "Completed": return "outline";
-      case "Draft": return "outline";
-      default: return "secondary";
+      case "Quoted": return "default"; // Warning/Pending state (blue)
+      case "In production": return "default"; // In progress state (blue)
+      case "Completed": return "secondary"; // Success state (green)
+      case "Draft": return "outline"; // Neutral state (gray)
+      default: return "outline";
     }
   };
 
@@ -87,7 +336,10 @@ export function Orders() {
           </div>
           {permissions.canCreateOrder && (
             <div className="flex gap-3">
-              <Button variant="ghost">
+              <Button 
+                variant="ghost"
+                onClick={handleExportAll}
+              >
                 <Download className="h-4 w-4 mr-2" />
                 Export CSV
               </Button>
@@ -130,7 +382,7 @@ export function Orders() {
         {/* Filter Bar */}
         <Card>
           <CardContent className="pt-6">
-            <div className="flex gap-3">
+            <div className="flex gap-3 items-center">
               <div className="flex-1 relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -138,10 +390,11 @@ export function Orders() {
                   className="pl-9"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
+                  aria-label="Search orders by order number or customer name"
                 />
               </div>
-              <Select>
-                <SelectTrigger className="w-48">
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-48" aria-label="Filter orders by status">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -152,8 +405,8 @@ export function Orders() {
                   <SelectItem value="completed">Completed</SelectItem>
                 </SelectContent>
               </Select>
-              <Select>
-                <SelectTrigger className="w-48">
+              <Select value={typeFilter} onValueChange={setTypeFilter}>
+                <SelectTrigger className="w-48" aria-label="Filter orders by type">
                   <SelectValue placeholder="Type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -162,6 +415,44 @@ export function Orders() {
                   <SelectItem value="factory">Factory design</SelectItem>
                 </SelectContent>
               </Select>
+              {selectedRows.length > 0 && (
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleBulkExport}
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Export ({selectedRows.length})
+                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm">
+                        <MoreVertical className="h-4 w-4 mr-2" />
+                        Actions ({selectedRows.length})
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => handleBulkStatusChange("Quoted")}>
+                        Mark as Quoted
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleBulkStatusChange("In production")}>
+                        Move to Production
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleBulkStatusChange("Completed")}>
+                        Mark as Completed
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem 
+                        onClick={handleBulkDelete}
+                        className="text-destructive"
+                      >
+                        Delete Selected
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -172,7 +463,10 @@ export function Orders() {
             <TableHeader>
               <TableRow>
                 <TableHead className="w-12">
-                  <Checkbox />
+                  <Checkbox 
+                    checked={selectedRows.length === filteredOrders.length && filteredOrders.length > 0}
+                    onCheckedChange={handleSelectAll}
+                  />
                 </TableHead>
                 <TableHead>ID</TableHead>
                 <TableHead>Customer</TableHead>
@@ -184,14 +478,17 @@ export function Orders() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {mockOrders.map((order) => (
+              {filteredOrders.map((order) => (
                 <TableRow
                   key={order.id}
-                  className="cursor-pointer"
+                  className="cursor-pointer hover:bg-muted/50 transition-colors"
                   onClick={() => handleRowClick(order.id)}
                 >
                   <TableCell onClick={(e) => e.stopPropagation()}>
-                    <Checkbox />
+                    <Checkbox 
+                      checked={selectedRows.includes(order.id)}
+                      onCheckedChange={() => handleToggleRow(order.id)}
+                    />
                   </TableCell>
                   <TableCell className="font-mono">{order.id}</TableCell>
                   <TableCell>{order.customer}</TableCell>
@@ -211,23 +508,30 @@ export function Orders() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleRowClick(order.id)}>
                           <Eye className="h-4 w-4 mr-2" />
                           View details
                         </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <Edit className="h-4 w-4 mr-2" />
-                          Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <Copy className="h-4 w-4 mr-2" />
-                          Duplicate
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-destructive">
-                          <Ban className="h-4 w-4 mr-2" />
-                          Cancel order
-                        </DropdownMenuItem>
+                        {userRole !== "Employee" && (
+                          <>
+                            <DropdownMenuItem onClick={() => toast.success(`Editing order ${order.id}`)}>
+                              <Edit className="h-4 w-4 mr-2" />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => toast.success(`Duplicated order ${order.id}`)}>
+                              <Copy className="h-4 w-4 mr-2" />
+                              Duplicate
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem 
+                              className="text-destructive"
+                              onClick={() => toast.error(`Order ${order.id} cancelled`)}
+                            >
+                              <Ban className="h-4 w-4 mr-2" />
+                              Cancel order
+                            </DropdownMenuItem>
+                          </>
+                        )}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -235,17 +539,22 @@ export function Orders() {
               ))}
             </TableBody>
           </Table>
+          {filteredOrders.length === 0 && (
+            <div className="text-center py-12 text-muted-foreground">
+              <p>No orders found matching your filters</p>
+            </div>
+          )}
         </Card>
       </div>
 
       {/* Order Drawer */}
       <Sheet open={!!selectedOrder} onOpenChange={handleCloseDrawer}>
-        <SheetContent className="w-[600px] overflow-y-auto">
-          <SheetHeader>
+        <SheetContent className="w-[700px] sm:max-w-[700px] overflow-y-auto px-6 pb-6">
+          <SheetHeader className="mb-6">
             <SheetTitle>Order {order?.id} — {order?.customer}</SheetTitle>
           </SheetHeader>
 
-          <Tabs defaultValue="details" className="mt-6">
+          <Tabs defaultValue="details" className="space-y-6">
             <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="details">Details</TabsTrigger>
               <TabsTrigger value="quote">Quote</TabsTrigger>
@@ -283,20 +592,34 @@ export function Orders() {
 
               <Separator />
 
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm">
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit details
-                </Button>
-                <Button variant="outline" size="sm">
-                  <Copy className="h-4 w-4 mr-2" />
-                  Duplicate
-                </Button>
-                <Button variant="destructive" size="sm">
-                  <Ban className="h-4 w-4 mr-2" />
-                  Cancel order
-                </Button>
-              </div>
+              {userRole !== "Employee" && (
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={handleOpenEditOrder}
+                  >
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit details
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => toast.success(`Order ${order?.id} duplicated`)}
+                  >
+                    <Copy className="h-4 w-4 mr-2" />
+                    Duplicate
+                  </Button>
+                  <Button 
+                    variant="destructive" 
+                    size="sm"
+                    onClick={() => toast.error(`Order ${order?.id} cancelled`)}
+                  >
+                    <Ban className="h-4 w-4 mr-2" />
+                    Cancel order
+                  </Button>
+                </div>
+              )}
 
               <Separator />
 
@@ -369,27 +692,38 @@ export function Orders() {
 
               <Separator />
 
-              <div className="flex gap-2">
-                <Button onClick={() => toast.success("Quote sent to customer")}>
-                  Send Quote
-                </Button>
-                <Button variant="outline" onClick={() => toast.success("Quote saved as draft")}>
-                  Save as Draft
-                </Button>
-              </div>
-              <Button variant="secondary" className="w-full" onClick={() => toast.success("Order approved for production")}>
-                Approve for Production
-              </Button>
+              {permissions.canEditQuote && (
+                <>
+                  <div className="flex gap-2">
+                    <Button onClick={() => toast.success("Quote sent to customer")}>
+                      Send Quote
+                    </Button>
+                    <Button variant="outline" onClick={() => toast.success("Quote saved as draft")}>
+                      Save as Draft
+                    </Button>
+                  </div>
+                  <Button variant="secondary" className="w-full" onClick={() => toast.success("Order approved for production")}>
+                    Approve for Production
+                  </Button>
+                </>
+              )}
+              {!permissions.canEditQuote && (
+                <div className="text-sm text-muted-foreground bg-muted p-3 rounded-lg">
+                  <p>You don't have permission to edit quotes or approve orders for production.</p>
+                </div>
+              )}
             </TabsContent>
 
             <TabsContent value="files" className="space-y-4">
-              <div className="border-2 border-dashed rounded-lg p-8 text-center">
-                <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-                <p className="text-sm">Drop files or click to upload</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  PDF/JPG/PNG, DWG/DXF, STL
-                </p>
-              </div>
+              {userRole !== "Employee" && (
+                <div className="border-2 border-dashed rounded-lg p-8 text-center">
+                  <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                  <p className="text-sm">Drop files or click to upload</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    PDF/JPG/PNG, DWG/DXF, STL
+                  </p>
+                </div>
+              )}
 
               <div className="space-y-2">
                 {mockFiles.map((file, i) => (
@@ -401,15 +735,29 @@ export function Orders() {
                         {file.uploadedBy} • {file.date} • {file.size}
                       </p>
                     </div>
-                    <Button variant="ghost" size="icon">
+                    <Button 
+                      variant="ghost" 
+                      size="icon"
+                      onClick={() => toast.info(`Viewing ${file.name}`)}
+                    >
                       <Eye className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="icon">
+                    <Button 
+                      variant="ghost" 
+                      size="icon"
+                      onClick={() => toast.success(`Downloading ${file.name}`)}
+                    >
                       <Download className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="icon">
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    {userRole !== "Employee" && (
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        onClick={() => toast.error(`Deleted ${file.name}`)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
                 ))}
               </div>
@@ -437,19 +785,26 @@ export function Orders() {
 
               <Separator />
 
-              <div className="space-y-2">
-                <Label>Add note</Label>
-                <Textarea placeholder="Enter a note..." />
-                <Button size="sm">Post</Button>
-              </div>
+              {userRole !== "Employee" && (
+                <div className="space-y-2">
+                  <Label>Add note</Label>
+                  <Textarea placeholder="Enter a note..." />
+                  <Button size="sm">Post</Button>
+                </div>
+              )}
+              {userRole === "Employee" && (
+                <div className="text-sm text-muted-foreground bg-muted p-3 rounded-lg">
+                  <p>You don't have permission to add notes to the timeline.</p>
+                </div>
+              )}
             </TabsContent>
           </Tabs>
         </SheetContent>
       </Sheet>
 
       {/* New Order Dialog */}
-      <Dialog open={showNewOrder} onOpenChange={setShowNewOrder}>
-        <DialogContent className="max-w-2xl">
+      <Dialog open={showNewOrder} onOpenChange={handleCloseNewOrder}>
+        <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>New Order</DialogTitle>
             <DialogDescription>Create a new order for a customer</DialogDescription>
@@ -457,8 +812,10 @@ export function Orders() {
 
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label>Customer</Label>
-              <Select>
+              <Label>
+                Customer <span className="text-destructive">*</span>
+              </Label>
+              <Select value={newOrderCustomer} onValueChange={setNewOrderCustomer}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select customer" />
                 </SelectTrigger>
@@ -468,11 +825,16 @@ export function Orders() {
                   <SelectItem value="ceylon">Ceylon Plastics</SelectItem>
                 </SelectContent>
               </Select>
+              {showNewOrderValidation && !newOrderCustomer && (
+                <p className="text-xs text-destructive">Please select a customer</p>
+              )}
             </div>
 
             <div className="space-y-2">
-              <Label>Order Type</Label>
-              <RadioGroup defaultValue="factory">
+              <Label>
+                Order Type <span className="text-destructive">*</span>
+              </Label>
+              <RadioGroup value={newOrderType} onValueChange={setNewOrderType}>
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="factory" id="factory" />
                   <Label htmlFor="factory">Factory design</Label>
@@ -482,23 +844,119 @@ export function Orders() {
                   <Label htmlFor="customer">Customer model</Label>
                 </div>
               </RadioGroup>
+              {showNewOrderValidation && !newOrderType && (
+                <p className="text-xs text-destructive">Please select an order type</p>
+              )}
             </div>
 
             <div className="space-y-2">
               <Label>Notes</Label>
-              <Textarea placeholder="Enter any notes..." />
+              <Textarea 
+                placeholder="Enter any notes..." 
+                value={newOrderNotes}
+                onChange={(e) => setNewOrderNotes(e.target.value)}
+              />
             </div>
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowNewOrder(false)}>
+            <Button 
+              variant="outline" 
+              onClick={handleCloseNewOrder}
+              disabled={isCreatingOrder}
+            >
               Cancel
             </Button>
-            <Button onClick={() => {
-              setShowNewOrder(false);
-              toast.success("Order created successfully");
-            }}>
-              Create Order
+            <Button 
+              onClick={handleCreateOrder}
+              disabled={isCreatingOrder}
+            >
+              {isCreatingOrder && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              {isCreatingOrder ? "Creating..." : "Create Order"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Order Dialog */}
+      <Dialog open={showEditOrder} onOpenChange={(open) => !open && handleCloseEditOrder()}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Order {selectedOrder}</DialogTitle>
+            <DialogDescription>Update order details</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>
+                Customer <span className="text-destructive">*</span>
+              </Label>
+              <Input 
+                placeholder="Enter customer name" 
+                value={editOrderCustomer}
+                onChange={(e) => setEditOrderCustomer(e.target.value)}
+              />
+              {showEditOrderValidation && !editOrderCustomer.trim() && (
+                <p className="text-xs text-destructive">Customer name is required</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label>
+                Order type <span className="text-destructive">*</span>
+              </Label>
+              <RadioGroup value={editOrderType} onValueChange={setEditOrderType}>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="Factory design" id="edit-factory" />
+                  <Label htmlFor="edit-factory">Factory design</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="Customer model" id="edit-customer" />
+                  <Label htmlFor="edit-customer">Customer model</Label>
+                </div>
+              </RadioGroup>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Status</Label>
+              <Select value={editOrderStatus} onValueChange={setEditOrderStatus}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Draft">Draft</SelectItem>
+                  <SelectItem value="Quoted">Quoted</SelectItem>
+                  <SelectItem value="In production">In production</SelectItem>
+                  <SelectItem value="Completed">Completed</SelectItem>
+                  <SelectItem value="Cancelled">Cancelled</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Notes</Label>
+              <Textarea 
+                placeholder="Add any notes or updates..."
+                value={editOrderNotes}
+                onChange={(e) => setEditOrderNotes(e.target.value)}
+                rows={4}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={handleCloseEditOrder}
+              disabled={isSavingOrder}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSaveEditOrder}
+              disabled={isSavingOrder}
+            >
+              {isSavingOrder && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              {isSavingOrder ? "Saving..." : "Save Changes"}
             </Button>
           </DialogFooter>
         </DialogContent>

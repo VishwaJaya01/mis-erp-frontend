@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AppShell } from "../layout/AppShell";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
@@ -10,13 +10,22 @@ import { Label } from "../ui/label";
 import { Textarea } from "../ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { Separator } from "../ui/separator";
-import { Search, Play, Pause, Plus, MoreVertical, Clock, CheckCircle2, Circle, AlertCircle } from "lucide-react";
+import { Search, Play, Pause, Plus, MoreVertical, Clock, CheckCircle2, Circle, AlertCircle, Loader2, Download } from "lucide-react";
 import { Avatar, AvatarFallback } from "../ui/avatar";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "../ui/sheet";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger 
+} from "../ui/dropdown-menu";
 import { toast } from "sonner";
 import { useRouter } from "../../lib/router";
+import { useDebounce } from "../../lib/hooks";
+import { formatDateShort } from "../../lib/dateUtils";
+import { exportTableData } from "../../lib/exportUtils";
 
 const mockTasks = [
   { id: "T1", title: "Complete #1043 material inspection", order: "#1043", customer: "APEX Garments", status: "In progress", priority: "High", due: "Due today", assignee: "Nuwan", time: "1h 35m" },
@@ -43,15 +52,170 @@ export function Work() {
   const [selectedTask, setSelectedTask] = useState<string | null>(null);
   const [showNewTask, setShowNewTask] = useState(false);
   const [timerRunning, setTimerRunning] = useState(false);
-  const [timerValue, setTimerValue] = useState("00:00:00");
+  const [timerSeconds, setTimerSeconds] = useState(0);
   const [viewMode, setViewMode] = useState<"kanban" | "list">("kanban");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [priorityFilter, setPriorityFilter] = useState("all");
+  const [tasks, setTasks] = useState(mockTasks);
+  
+  // Debounced search term
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
+  
+  // Time tab state
+  const [manualDate, setManualDate] = useState("");
+  const [manualTask, setManualTask] = useState("");
+  const [manualDuration, setManualDuration] = useState("");
+  const [manualNotes, setManualNotes] = useState("");
+  const [currentWeekOffset, setCurrentWeekOffset] = useState(0);
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [viewDateRange, setViewDateRange] = useState<'day' | 'week' | 'month'>('week');
+  
+  // All Jobs tab filters
+  const [allJobsStatusFilter, setAllJobsStatusFilter] = useState("all");
+  const [allJobsAssigneeFilter, setAllJobsAssigneeFilter] = useState("all");
+  
+  // New Task form state
+  const [newTaskTitle, setNewTaskTitle] = useState("");
+  const [newTaskDescription, setNewTaskDescription] = useState("");
+  const [newTaskPriority, setNewTaskPriority] = useState("");
+  const [newTaskDueDate, setNewTaskDueDate] = useState("");
+  const [newTaskAssignee, setNewTaskAssignee] = useState("");
+
+  // Validation and loading states
+  const [isCreatingTask, setIsCreatingTask] = useState(false);
+  const [showTaskValidation, setShowTaskValidation] = useState(false);
+
+  // Reset form when dialog closes
+  const handleCloseNewTask = () => {
+    setShowNewTask(false);
+    setNewTaskTitle("");
+    setNewTaskDescription("");
+    setNewTaskPriority("");
+    setNewTaskDueDate("");
+    setNewTaskAssignee("");
+    setShowTaskValidation(false);
+  };
+
+  const handleCreateTask = async () => {
+    // Show validation messages
+    setShowTaskValidation(true);
+
+    // Validate required fields
+    if (!newTaskTitle.trim() || !newTaskPriority) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+
+    // Simulate async operation
+    setIsCreatingTask(true);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      toast.success("Task created successfully");
+      handleCloseNewTask();
+    } catch (error) {
+      toast.error("Failed to create task");
+    } finally {
+      setIsCreatingTask(false);
+    }
+  };
+
+  // Update task status
+  const updateTaskStatus = (taskId: string, newStatus: string) => {
+    setTasks(prevTasks => 
+      prevTasks.map(task => 
+        task.id === taskId ? { ...task, status: newStatus } : task
+      )
+    );
+    const task = tasks.find(t => t.id === taskId);
+    toast.success(`"${task?.title}" moved to ${newStatus}`);
+  };
+
+  // Time tab handlers
+  const handleAddManualEntry = () => {
+    if (!manualDate || !manualTask || !manualDuration) {
+      toast.error("Please fill in date, task, and duration");
+      return;
+    }
+    toast.success("Time entry added successfully");
+    setManualDate("");
+    setManualTask("");
+    setManualDuration("");
+    setManualNotes("");
+  };
+
+  const handlePreviousWeek = () => {
+    setCurrentWeekOffset(prev => prev - 1);
+    toast.info("Showing previous week");
+  };
+
+  const handleNextWeek = () => {
+    setCurrentWeekOffset(prev => prev + 1);
+    toast.info("Showing next week");
+  };
+
+  const handleExportCSV = () => {
+    toast.success("Exporting time logs to CSV...");
+  };
+
+  const handleDateSelect = (date: string) => {
+    setSelectedDate(date);
+    setManualDate(date);
+    toast.info(`Selected date: ${new Date(date).toLocaleDateString()}`);
+  };
+
+  const handleViewRangeChange = (range: 'day' | 'week' | 'month') => {
+    setViewDateRange(range);
+    toast.info(`Viewing ${range} view`);
+  };
+
+  const handleGoToToday = () => {
+    const today = new Date().toISOString().split('T')[0];
+    setSelectedDate(today);
+    setManualDate(today);
+    setCurrentWeekOffset(0);
+    toast.success("Jumped to today");
+  };
+
+  const handleCreateTimeEntry = () => {
+    if (!selectedDate || !manualTask) {
+      toast.error("Please select a date and task");
+      return;
+    }
+    toast.success(`Time entry created for ${new Date(selectedDate).toLocaleDateString()}`);
+  };
+
+  // Format seconds to HH:MM:SS
+  const formatTime = (seconds: number) => {
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    return `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  };
+
+  const timerValue = formatTime(timerSeconds);
+
+  // Timer effect
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null;
+    
+    if (timerRunning) {
+      interval = setInterval(() => {
+        setTimerSeconds(prev => prev + 1);
+      }, 1000);
+    }
+    
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [timerRunning]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "Todo": return "outline";
-      case "In progress": return "default";
-      case "Blocked": return "destructive";
-      case "Done": return "secondary";
+      case "Todo": return "outline"; // Neutral state (gray)
+      case "In progress": return "default"; // In progress state (blue)
+      case "Blocked": return "destructive"; // Error state (red)
+      case "Done": return "secondary"; // Success state (green)
       default: return "outline";
     }
   };
@@ -65,11 +229,66 @@ export function Work() {
     }
   };
 
+  // Filter tasks based on search term and filters
+  // Filter tasks based on search and filters
+  const filteredTasks = tasks.filter(task => {
+    const searchLower = debouncedSearchTerm.toLowerCase();
+    const matchesSearch = (
+      task.title.toLowerCase().includes(searchLower) ||
+      task.order.toLowerCase().includes(searchLower) ||
+      task.customer.toLowerCase().includes(searchLower)
+    );
+    
+    const matchesStatus = statusFilter === "all" || 
+      task.status.toLowerCase() === statusFilter.toLowerCase() ||
+      (statusFilter === "inprogress" && task.status === "In progress");
+    
+    const matchesPriority = priorityFilter === "all" || 
+      task.priority.toLowerCase() === priorityFilter.toLowerCase();
+    
+    return matchesSearch && matchesStatus && matchesPriority;
+  });
+
   const kanbanColumns = {
-    unassigned: mockTasks.filter(t => !t.assignee),
-    inprogress: mockTasks.filter(t => t.status === "In progress"),
+    unassigned: filteredTasks.filter(t => !t.assignee),
+    inprogress: filteredTasks.filter(t => t.status === "In progress"),
     qa: [],
-    completed: mockTasks.filter(t => t.status === "Done"),
+    completed: filteredTasks.filter(t => t.status === "Done"),
+  };
+
+  const handleExportTasks = () => {
+    try {
+      if (filteredTasks.length === 0) {
+        toast.error("No tasks to export");
+        return;
+      }
+
+      // Define columns for export
+      const columns = [
+        { key: 'id' as const, label: 'Task ID' },
+        { key: 'title' as const, label: 'Title' },
+        { key: 'order' as const, label: 'Order' },
+        { key: 'customer' as const, label: 'Customer' },
+        { key: 'status' as const, label: 'Status' },
+        { key: 'priority' as const, label: 'Priority' },
+        { key: 'assignee' as const, label: 'Assignee' },
+        { key: 'due' as const, label: 'Due Date' },
+        { key: 'time' as const, label: 'Time Spent' },
+      ];
+
+      // Export filtered tasks as CSV
+      exportTableData(
+        filteredTasks,
+        `tasks-${new Date().toISOString().split('T')[0]}`,
+        'csv',
+        columns
+      );
+      
+      toast.success(`Successfully exported ${filteredTasks.length} tasks`);
+    } catch (error) {
+      console.error("Export error:", error);
+      toast.error("Failed to export tasks. Please try again.");
+    }
   };
 
   return (
@@ -77,7 +296,9 @@ export function Work() {
       <Tabs defaultValue="my-tasks" className="space-y-6">
         <TabsList>
           <TabsTrigger value="my-tasks">My Tasks</TabsTrigger>
-          <TabsTrigger value="all-jobs">All Jobs</TabsTrigger>
+          {permissions.canSeeAllJobs && (
+            <TabsTrigger value="all-jobs">All Jobs</TabsTrigger>
+          )}
           <TabsTrigger value="time">Time</TabsTrigger>
         </TabsList>
 
@@ -87,10 +308,16 @@ export function Work() {
             <div className="flex gap-3 flex-1">
               <div className="relative flex-1 max-w-md">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Search tasks..." className="pl-9" />
+                <Input 
+                  placeholder="Search tasks..." 
+                  className="pl-9"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  aria-label="Search tasks by title or description"
+                />
               </div>
-              <Select>
-                <SelectTrigger className="w-40">
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-40" aria-label="Filter tasks by status">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -101,8 +328,8 @@ export function Work() {
                   <SelectItem value="done">Done</SelectItem>
                 </SelectContent>
               </Select>
-              <Select>
-                <SelectTrigger className="w-40">
+              <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+                <SelectTrigger className="w-40" aria-label="Filter tasks by priority">
                   <SelectValue placeholder="Priority" />
                 </SelectTrigger>
                 <SelectContent>
@@ -113,16 +340,26 @@ export function Work() {
                 </SelectContent>
               </Select>
             </div>
-            <Button onClick={() => setShowNewTask(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              New Task
-            </Button>
+            <div className="flex gap-3">
+              <Button 
+                variant="ghost"
+                onClick={handleExportTasks}
+                aria-label="Export tasks to CSV"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export
+              </Button>
+              <Button onClick={() => setShowNewTask(true)} aria-label="Create new task">
+                <Plus className="h-4 w-4 mr-2" />
+                New Task
+              </Button>
+            </div>
           </div>
 
           <Card>
             <CardContent className="pt-6">
               <div className="space-y-2">
-                {mockTasks.map((task) => (
+                {filteredTasks.map((task) => (
                   <div
                     key={task.id}
                     className="flex items-center gap-3 p-3 rounded-lg border hover:bg-muted/50 cursor-pointer"
@@ -141,17 +378,55 @@ export function Work() {
                         {task.assignee[0]}
                       </AvatarFallback>
                     </Avatar>
-                    <Badge variant={getStatusColor(task.status) as any}>{task.status}</Badge>
-                    <Badge variant="outline">{task.due}</Badge>
+                    <Badge variant={getStatusColor(task.status) as any} className="mr-2">{task.status}</Badge>
+                    <Badge variant="outline" className="mr-2">{task.due}</Badge>
                     <span className="text-sm text-muted-foreground">{task.time}</span>
-                    <Button variant="ghost" size="icon" onClick={(e) => e.stopPropagation()}>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (task.status !== "In progress") {
+                          updateTaskStatus(task.id, "In progress");
+                        } else {
+                          toast.info("Task is already in progress");
+                        }
+                      }}
+                    >
                       <Play className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={(e) => e.stopPropagation()}>
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" onClick={(e) => e.stopPropagation()}>
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => updateTaskStatus(task.id, "Todo")}>
+                          <Circle className="h-4 w-4 mr-2" />
+                          Mark as Todo
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => updateTaskStatus(task.id, "In progress")}>
+                          <Clock className="h-4 w-4 mr-2" />
+                          Mark as In Progress
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => updateTaskStatus(task.id, "Blocked")}>
+                          <AlertCircle className="h-4 w-4 mr-2" />
+                          Mark as Blocked
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => updateTaskStatus(task.id, "Done")}>
+                          <CheckCircle2 className="h-4 w-4 mr-2" />
+                          Mark as Done
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 ))}
+                {filteredTasks.length === 0 && (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <p>No tasks match your filters</p>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -177,7 +452,7 @@ export function Work() {
               </Button>
             </div>
             <div className="flex gap-3">
-              <Select>
+              <Select value={allJobsStatusFilter} onValueChange={setAllJobsStatusFilter}>
                 <SelectTrigger className="w-40">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
@@ -189,7 +464,7 @@ export function Work() {
                   <SelectItem value="completed">Completed</SelectItem>
                 </SelectContent>
               </Select>
-              <Select>
+              <Select value={allJobsAssigneeFilter} onValueChange={setAllJobsAssigneeFilter}>
                 <SelectTrigger className="w-40">
                   <SelectValue placeholder="Assignee" />
                 </SelectTrigger>
@@ -211,12 +486,32 @@ export function Work() {
                   <CardDescription>{kanbanColumns.unassigned.length} tasks</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-2">
-                  {mockTasks.slice(0, 1).map((task) => (
-                    <Card key={task.id} className="cursor-pointer hover:shadow-md transition-shadow">
+                  {kanbanColumns.unassigned.map((task) => (
+                    <Card key={task.id} className="cursor-pointer hover:shadow-md transition-shadow group">
                       <CardContent className="p-3 space-y-2">
                         <div className="flex items-start gap-2">
                           <div className={`h-2 w-2 rounded-full mt-1 ${getPriorityColor(task.priority)}`} />
                           <p className="text-sm flex-1">{task.title}</p>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-6 w-6 opacity-0 group-hover:opacity-100"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <MoreVertical className="h-3 w-3" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => updateTaskStatus(task.id, "In progress")}>
+                                Move to In Progress
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => updateTaskStatus(task.id, "Done")}>
+                                Move to Done
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </div>
                         <p className="text-xs text-muted-foreground">{task.order} • {task.customer}</p>
                         <div className="flex gap-2">
@@ -225,7 +520,12 @@ export function Work() {
                       </CardContent>
                     </Card>
                   ))}
-                  <Button variant="ghost" size="sm" className="w-full">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="w-full"
+                    onClick={() => toast.info("Add task functionality")}
+                  >
                     <Plus className="h-4 w-4 mr-2" />
                     Add task
                   </Button>
@@ -239,11 +539,34 @@ export function Work() {
                 </CardHeader>
                 <CardContent className="space-y-2">
                   {kanbanColumns.inprogress.map((task) => (
-                    <Card key={task.id} className="cursor-pointer hover:shadow-md transition-shadow">
+                    <Card key={task.id} className="cursor-pointer hover:shadow-md transition-shadow group">
                       <CardContent className="p-3 space-y-2">
                         <div className="flex items-start gap-2">
                           <div className={`h-2 w-2 rounded-full mt-1 ${getPriorityColor(task.priority)}`} />
                           <p className="text-sm flex-1">{task.title}</p>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-6 w-6 opacity-0 group-hover:opacity-100"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <MoreVertical className="h-3 w-3" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => updateTaskStatus(task.id, "Todo")}>
+                                Move to Todo
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => updateTaskStatus(task.id, "Blocked")}>
+                                Move to Blocked
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => updateTaskStatus(task.id, "Done")}>
+                                Move to Done
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </div>
                         <p className="text-xs text-muted-foreground">{task.order} • {task.customer}</p>
                         <div className="flex items-center gap-2">
@@ -255,7 +578,12 @@ export function Work() {
                       </CardContent>
                     </Card>
                   ))}
-                  <Button variant="ghost" size="sm" className="w-full">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="w-full"
+                    onClick={() => toast.info("Add task functionality")}
+                  >
                     <Plus className="h-4 w-4 mr-2" />
                     Add task
                   </Button>
@@ -268,7 +596,12 @@ export function Work() {
                   <CardDescription>0 tasks</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <Button variant="ghost" size="sm" className="w-full">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="w-full"
+                    onClick={() => toast.info("Add task functionality")}
+                  >
                     <Plus className="h-4 w-4 mr-2" />
                     Add task
                   </Button>
@@ -278,10 +611,52 @@ export function Work() {
               <Card>
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm">Completed</CardTitle>
-                  <CardDescription>0 tasks</CardDescription>
+                  <CardDescription>{kanbanColumns.completed.length} tasks</CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <Button variant="ghost" size="sm" className="w-full">
+                <CardContent className="space-y-2">
+                  {kanbanColumns.completed.map((task) => (
+                    <Card key={task.id} className="cursor-pointer hover:shadow-md transition-shadow group">
+                      <CardContent className="p-3 space-y-2">
+                        <div className="flex items-start gap-2">
+                          <div className={`h-2 w-2 rounded-full mt-1 ${getPriorityColor(task.priority)}`} />
+                          <p className="text-sm flex-1">{task.title}</p>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-6 w-6 opacity-0 group-hover:opacity-100"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <MoreVertical className="h-3 w-3" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => updateTaskStatus(task.id, "Todo")}>
+                                Move to Todo
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => updateTaskStatus(task.id, "In progress")}>
+                                Move to In Progress
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                        <p className="text-xs text-muted-foreground">{task.order} • {task.customer}</p>
+                        <div className="flex items-center gap-2">
+                          <Avatar className="h-5 w-5">
+                            <AvatarFallback className="text-xs">{task.assignee[0]}</AvatarFallback>
+                          </Avatar>
+                          <Badge variant="outline" className="text-xs">{task.due}</Badge>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="w-full"
+                    onClick={() => toast.info("Add task functionality")}
+                  >
                     <Plus className="h-4 w-4 mr-2" />
                     Add task
                   </Button>
@@ -305,7 +680,7 @@ export function Work() {
                 </TableHeader>
                 <TableBody>
                   {mockTasks.map((task) => (
-                    <TableRow key={task.id}>
+                    <TableRow key={task.id} className="hover:bg-muted/50 transition-colors">
                       <TableCell>{task.title}</TableCell>
                       <TableCell className="font-mono">{task.order}</TableCell>
                       <TableCell>
@@ -393,8 +768,12 @@ export function Work() {
                 <div className="flex-1 space-y-3">
                   <p className="text-sm">Manual Entry</p>
                   <div className="space-y-2">
-                    <Input type="date" />
-                    <Select>
+                    <Input 
+                      type="date" 
+                      value={manualDate}
+                      onChange={(e) => setManualDate(e.target.value)}
+                    />
+                    <Select value={manualTask} onValueChange={setManualTask}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select task" />
                       </SelectTrigger>
@@ -403,9 +782,22 @@ export function Work() {
                         <SelectItem value="t2">QA review #1044</SelectItem>
                       </SelectContent>
                     </Select>
-                    <Input placeholder="Duration (e.g., 2h 30m)" />
-                    <Input placeholder="Notes" />
-                    <Button className="w-full">Add Entry</Button>
+                    <Input 
+                      placeholder="Duration (e.g., 2h 30m)" 
+                      value={manualDuration}
+                      onChange={(e) => setManualDuration(e.target.value)}
+                    />
+                    <Input 
+                      placeholder="Notes" 
+                      value={manualNotes}
+                      onChange={(e) => setManualNotes(e.target.value)}
+                    />
+                    <Button 
+                      className="w-full"
+                      onClick={handleAddManualEntry}
+                    >
+                      Add Entry
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -431,9 +823,27 @@ export function Work() {
               <div className="flex items-center justify-between">
                 <CardTitle>My Time Logs</CardTitle>
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm">Previous Week</Button>
-                  <Button variant="outline" size="sm">Next Week</Button>
-                  <Button variant="outline" size="sm">Export CSV</Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={handlePreviousWeek}
+                  >
+                    Previous Week
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={handleNextWeek}
+                  >
+                    Next Week
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={handleExportCSV}
+                  >
+                    Export CSV
+                  </Button>
                 </div>
               </div>
             </CardHeader>
@@ -453,7 +863,7 @@ export function Work() {
                 </TableHeader>
                 <TableBody>
                   {mockTimeLogs.map((log) => (
-                    <TableRow key={log.id}>
+                    <TableRow key={log.id} className="hover:bg-muted/50 transition-colors">
                       <TableCell>{log.date}</TableCell>
                       <TableCell>{log.task}</TableCell>
                       <TableCell>{log.start}</TableCell>
@@ -485,81 +895,98 @@ export function Work() {
           </Card>
 
           {/* Review Time */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Review Time</CardTitle>
-              <CardDescription>Approve or reject time entries from your team</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Employee</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Task</TableHead>
-                    <TableHead>Duration</TableHead>
-                    <TableHead>Notes</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {mockReviewItems.map((item) => (
-                    <TableRow key={item.id}>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Avatar className="h-6 w-6">
-                            <AvatarFallback className="text-xs">{item.employee[0]}</AvatarFallback>
-                          </Avatar>
-                          {item.employee}
-                        </div>
-                      </TableCell>
-                      <TableCell>{item.date}</TableCell>
-                      <TableCell>{item.task}</TableCell>
-                      <TableCell>{item.duration}</TableCell>
-                      <TableCell className="text-sm text-muted-foreground">{item.notes}</TableCell>
-                      <TableCell>
-                        <Badge variant="default">{item.status}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-2">
-                          <Button size="sm" onClick={() => toast.success(`Approved time entry for ${item.employee}`)}>
-                            Approve
-                          </Button>
-                          <Button size="sm" variant="ghost" onClick={() => toast.error(`Rejected time entry for ${item.employee}`)}>
-                            Reject
-                          </Button>
-                        </div>
-                      </TableCell>
+          {permissions.canReviewTime && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Review Time</CardTitle>
+                <CardDescription>Approve or reject time entries from your team</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Employee</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Task</TableHead>
+                      <TableHead>Duration</TableHead>
+                      <TableHead>Notes</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
+                  </TableHeader>
+                  <TableBody>
+                    {mockReviewItems.map((item) => (
+                      <TableRow key={item.id} className="hover:bg-muted/50 transition-colors">
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Avatar className="h-6 w-6">
+                              <AvatarFallback className="text-xs">{item.employee[0]}</AvatarFallback>
+                            </Avatar>
+                            {item.employee}
+                          </div>
+                        </TableCell>
+                        <TableCell>{item.date}</TableCell>
+                        <TableCell>{item.task}</TableCell>
+                        <TableCell>{item.duration}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground">{item.notes}</TableCell>
+                        <TableCell>
+                          <Badge variant="default">{item.status}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-2">
+                            <Button size="sm" onClick={() => toast.success(`Approved time entry for ${item.employee}`)}>
+                              Approve
+                            </Button>
+                            <Button size="sm" variant="ghost" onClick={() => toast.error(`Rejected time entry for ${item.employee}`)}>
+                              Reject
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
       </Tabs>
 
       {/* New Task Dialog */}
-      <Dialog open={showNewTask} onOpenChange={setShowNewTask}>
-        <DialogContent>
+      <Dialog open={showNewTask} onOpenChange={(open) => !open && handleCloseNewTask()}>
+        <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>New Task</DialogTitle>
             <DialogDescription>Create a new task</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label>Title</Label>
-              <Input placeholder="Task title" />
+              <Label>
+                Title <span className="text-destructive">*</span>
+              </Label>
+              <Input 
+                placeholder="Task title" 
+                value={newTaskTitle}
+                onChange={(e) => setNewTaskTitle(e.target.value)}
+              />
+              {showTaskValidation && !newTaskTitle.trim() && (
+                <p className="text-xs text-destructive">Please enter a task title</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label>Description</Label>
-              <Textarea placeholder="Task description" />
+              <Textarea 
+                placeholder="Task description" 
+                value={newTaskDescription}
+                onChange={(e) => setNewTaskDescription(e.target.value)}
+              />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Priority</Label>
-                <Select>
+                <Label>
+                  Priority <span className="text-destructive">*</span>
+                </Label>
+                <Select value={newTaskPriority} onValueChange={setNewTaskPriority}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select priority" />
                   </SelectTrigger>
@@ -569,15 +996,22 @@ export function Work() {
                     <SelectItem value="low">Low</SelectItem>
                   </SelectContent>
                 </Select>
+                {showTaskValidation && !newTaskPriority && (
+                  <p className="text-xs text-destructive">Please select priority</p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label>Due Date</Label>
-                <Input type="date" />
+                <Input 
+                  type="date" 
+                  value={newTaskDueDate}
+                  onChange={(e) => setNewTaskDueDate(e.target.value)}
+                />
               </div>
             </div>
             <div className="space-y-2">
               <Label>Assignee</Label>
-              <Select>
+              <Select value={newTaskAssignee} onValueChange={setNewTaskAssignee}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select assignee" />
                 </SelectTrigger>
@@ -590,11 +1024,16 @@ export function Work() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowNewTask(false)}>Cancel</Button>
-            <Button onClick={() => {
-              setShowNewTask(false);
-              toast.success("Task created successfully");
-            }}>Create Task</Button>
+            <Button variant="outline" onClick={handleCloseNewTask} disabled={isCreatingTask}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleCreateTask}
+              disabled={isCreatingTask}
+            >
+              {isCreatingTask && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              {isCreatingTask ? "Creating..." : "Create Task"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
