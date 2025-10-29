@@ -1,60 +1,107 @@
-import { AppShell } from "../layout/AppShell";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
-import { Button } from "../ui/button";
-import { Checkbox } from "../ui/checkbox";
-import { Badge } from "../ui/badge";
-import { Separator } from "../ui/separator";
-import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../ui/dialog";
-import { Input } from "../ui/input";
-import { Label } from "../ui/label";
-import { Textarea } from "../ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
-import { Clock, Play, Pause, Plus, CheckCircle2, Circle, Timer } from "lucide-react";
-import { Avatar, AvatarFallback } from "../ui/avatar";
-import { useState, useEffect } from "react";
-import { toast } from "sonner";
+import { AppShell } from '../layout/AppShell';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '../ui/card';
+import { Button } from '../ui/button';
+import { Checkbox } from '../ui/checkbox';
+import { Badge } from '../ui/badge';
+import { Separator } from '../ui/separator';
+import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '../ui/dialog';
+import { Input } from '../ui/input';
+import { Label } from '../ui/label';
+import { Textarea } from '../ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../ui/select';
+import {
+  Clock,
+  Play,
+  Pause,
+  Plus,
+  CheckCircle2,
+  Circle,
+  Timer,
+} from 'lucide-react';
+import { Avatar, AvatarFallback } from '../ui/avatar';
+import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 
 interface HomeProps {
-  role: "Employee" | "Supervisor" | "Manager";
+  role: 'Employee' | 'Supervisor' | 'Manager';
 }
 
 export function Home({ role }: HomeProps) {
   const [announcements, setAnnouncements] = useState([
-    { id: '1', title: 'New safety protocol updates', time: '2 hours ago', isNew: true },
-    { id: '2', title: 'Holiday schedule for November', time: '1 day ago', isNew: false },
-    { id: '3', title: 'Team building event next week', time: '3 days ago', isNew: false },
-    { id: '4', title: 'Q4 production targets released', time: '1 week ago', isNew: false }
+    {
+      id: '1',
+      title: 'New safety protocol updates',
+      time: '2 hours ago',
+      isNew: true,
+    },
+    {
+      id: '2',
+      title: 'Holiday schedule for November',
+      time: '1 day ago',
+      isNew: false,
+    },
+    {
+      id: '3',
+      title: 'Team building event next week',
+      time: '3 days ago',
+      isNew: false,
+    },
+    {
+      id: '4',
+      title: 'Q4 production targets released',
+      time: '1 week ago',
+      isNew: false,
+    },
   ]);
 
   const getGreeting = () => {
     const hour = new Date().getHours();
-    if (hour < 12) return "Good morning";
-    if (hour < 18) return "Good afternoon";
-    return "Good evening";
+    if (hour < 12) return 'Good morning';
+    if (hour < 18) return 'Good afternoon';
+    return 'Good evening';
   };
 
-  const today = new Date().toLocaleDateString("en-US", {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
+  const today = new Date().toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
   });
 
   const handleViewAnnouncement = async (id: string, title: string) => {
     try {
       toast.info(`Viewing: ${title}`);
-      
+
       // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 300));
-      
+
       // Mark as read when viewed
-      setAnnouncements(prev => 
-        prev.map(ann => ann.id === id ? { ...ann, isNew: false } : ann)
+      setAnnouncements((prev) =>
+        prev.map((ann) => (ann.id === id ? { ...ann, isNew: false } : ann))
       );
     } catch (error) {
-      console.error("View announcement error:", error);
-      toast.error("Failed to load announcement. Please try again.");
+      console.error('View announcement error:', error);
+      toast.error('Failed to load announcement. Please try again.');
     }
   };
 
@@ -62,23 +109,23 @@ export function Home({ role }: HomeProps) {
     try {
       // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 300));
-      
-      setAnnouncements(prev => 
-        prev.map(ann => ann.id === id ? { ...ann, isNew: false } : ann)
+
+      setAnnouncements((prev) =>
+        prev.map((ann) => (ann.id === id ? { ...ann, isNew: false } : ann))
       );
-      toast.success("Marked as read");
+      toast.success('Marked as read');
     } catch (error) {
-      console.error("Mark as read error:", error);
-      toast.error("Failed to mark as read. Please try again.");
+      console.error('Mark as read error:', error);
+      toast.error('Failed to mark as read. Please try again.');
     }
   };
 
   const handleViewAllAnnouncements = () => {
-    toast.info("Opening announcements page...");
+    toast.info('Opening announcements page...');
   };
 
   return (
-    <AppShell activePage="home" breadcrumbs={["Home"]}>
+    <AppShell activePage="home" breadcrumbs={['Home']}>
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -91,9 +138,9 @@ export function Home({ role }: HomeProps) {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
-            {role === "Employee" && <EmployeeContent />}
-            {role === "Supervisor" && <SupervisorContent />}
-            {role === "Manager" && <ManagerContent />}
+            {role === 'Employee' && <EmployeeContent />}
+            {role === 'Supervisor' && <SupervisorContent />}
+            {role === 'Manager' && <ManagerContent />}
           </div>
 
           {/* Announcements */}
@@ -106,14 +153,19 @@ export function Home({ role }: HomeProps) {
                 {announcements.map((announcement, index) => (
                   <div key={announcement.id}>
                     {index > 0 && <Separator />}
-                    <div 
+                    <div
                       className="space-y-1 cursor-pointer hover:bg-muted/50 p-2 rounded-lg transition-colors"
-                      onClick={() => handleViewAnnouncement(announcement.id, announcement.title)}
+                      onClick={() =>
+                        handleViewAnnouncement(
+                          announcement.id,
+                          announcement.title
+                        )
+                      }
                     >
                       <div className="flex items-start justify-between gap-2">
                         <p className="text-sm">{announcement.title}</p>
                         {announcement.isNew && (
-                          <Badge 
+                          <Badge
                             variant="secondary"
                             className="cursor-pointer"
                             onClick={(e) => {
@@ -125,12 +177,14 @@ export function Home({ role }: HomeProps) {
                           </Badge>
                         )}
                       </div>
-                      <p className="text-xs text-muted-foreground">{announcement.time}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {announcement.time}
+                      </p>
                     </div>
                   </div>
                 ))}
-                <Button 
-                  variant="link" 
+                <Button
+                  variant="link"
                   className="w-full"
                   onClick={handleViewAllAnnouncements}
                 >
@@ -151,9 +205,33 @@ function EmployeeContent() {
   const [taskFilter, setTaskFilter] = useState<'today' | 'week'>('today');
   const [showCreateTaskDialog, setShowCreateTaskDialog] = useState(false);
   const [tasks, setTasks] = useState([
-    { id: '1', title: 'Complete #1043 material inspection', order: '#1043', customer: 'APEX Garments', status: 'In progress', due: 'Due today', completed: false },
-    { id: '2', title: 'QA review for #1044', order: '#1044', customer: 'Orion Tools', status: 'Todo', due: 'Tomorrow', completed: false },
-    { id: '3', title: 'Update production drawings', order: '#1045', customer: 'Ceylon Plastics', status: 'Todo', due: 'Oct 30', completed: false }
+    {
+      id: '1',
+      title: 'Complete #1043 material inspection',
+      order: '#1043',
+      customer: 'APEX Garments',
+      status: 'In progress',
+      due: 'Due today',
+      completed: false,
+    },
+    {
+      id: '2',
+      title: 'QA review for #1044',
+      order: '#1044',
+      customer: 'Orion Tools',
+      status: 'Todo',
+      due: 'Tomorrow',
+      completed: false,
+    },
+    {
+      id: '3',
+      title: 'Update production drawings',
+      order: '#1045',
+      customer: 'Ceylon Plastics',
+      status: 'Todo',
+      due: 'Oct 30',
+      completed: false,
+    },
   ]);
 
   // Form state for create task
@@ -164,7 +242,7 @@ function EmployeeContent() {
     customer: '',
     dueDate: '',
     priority: 'medium' as 'low' | 'medium' | 'high',
-    estimatedHours: ''
+    estimatedHours: '',
   });
 
   // Format seconds to HH:MM:SS
@@ -172,19 +250,22 @@ function EmployeeContent() {
     const hrs = Math.floor(seconds / 3600);
     const mins = Math.floor((seconds % 3600) / 60);
     const secs = seconds % 60;
-    return `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    return `${String(hrs).padStart(2, '0')}:${String(mins).padStart(
+      2,
+      '0'
+    )}:${String(secs).padStart(2, '0')}`;
   };
 
   // Timer effect
   useEffect(() => {
     let interval: NodeJS.Timeout | null = null;
-    
+
     if (timerRunning) {
       interval = setInterval(() => {
-        setTimerSeconds(prev => prev + 1);
+        setTimerSeconds((prev) => prev + 1);
       }, 1000);
     }
-    
+
     return () => {
       if (interval) clearInterval(interval);
     };
@@ -193,15 +274,23 @@ function EmployeeContent() {
   // Handle task filter change
   const handleFilterChange = (filter: 'today' | 'week') => {
     setTaskFilter(filter);
-    toast.info(`Showing tasks for ${filter === 'today' ? 'today' : 'this week'}`);
+    toast.info(
+      `Showing tasks for ${filter === 'today' ? 'today' : 'this week'}`
+    );
   };
 
   // Handle task completion
   const handleTaskComplete = (taskId: string, checked: boolean) => {
-    setTasks(tasks.map(task => 
-      task.id === taskId ? { ...task, completed: checked, status: checked ? 'Done' : 'Todo' } : task
-    ));
-    toast.success(checked ? 'Task marked as complete' : 'Task marked as incomplete');
+    setTasks(
+      tasks.map((task) =>
+        task.id === taskId
+          ? { ...task, completed: checked, status: checked ? 'Done' : 'Todo' }
+          : task
+      )
+    );
+    toast.success(
+      checked ? 'Task marked as complete' : 'Task marked as incomplete'
+    );
   };
 
   // Handle task timer start
@@ -238,13 +327,16 @@ function EmployeeContent() {
         const today = new Date();
         const tomorrow = new Date(today);
         tomorrow.setDate(tomorrow.getDate() + 1);
-        
+
         if (dueDate.toDateString() === today.toDateString()) {
           dueText = 'Due today';
         } else if (dueDate.toDateString() === tomorrow.toDateString()) {
           dueText = 'Tomorrow';
         } else {
-          dueText = dueDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+          dueText = dueDate.toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+          });
         }
       }
 
@@ -256,11 +348,11 @@ function EmployeeContent() {
         customer: newTask.customer || 'No customer',
         status: 'Todo',
         due: dueText,
-        completed: false
+        completed: false,
       };
 
       setTasks([...tasks, task]);
-      
+
       // Reset form
       setNewTask({
         title: '',
@@ -269,9 +361,9 @@ function EmployeeContent() {
         customer: '',
         dueDate: '',
         priority: 'medium',
-        estimatedHours: ''
+        estimatedHours: '',
       });
-      
+
       setShowCreateTaskDialog(false);
       toast.success('Task created successfully');
     } catch (error) {
@@ -289,7 +381,7 @@ function EmployeeContent() {
       customer: '',
       dueDate: '',
       priority: 'medium',
-      estimatedHours: ''
+      estimatedHours: '',
     });
     setShowCreateTaskDialog(false);
   };
@@ -307,15 +399,15 @@ function EmployeeContent() {
           <div className="flex items-center justify-between">
             <CardTitle>My Tasks</CardTitle>
             <div className="flex gap-2">
-              <Button 
-                variant={taskFilter === 'today' ? 'default' : 'outline'} 
+              <Button
+                variant={taskFilter === 'today' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => handleFilterChange('today')}
               >
                 Today
               </Button>
-              <Button 
-                variant={taskFilter === 'week' ? 'default' : 'ghost'} 
+              <Button
+                variant={taskFilter === 'week' ? 'default' : 'ghost'}
                 size="sm"
                 onClick={() => handleFilterChange('week')}
               >
@@ -326,25 +418,41 @@ function EmployeeContent() {
         </CardHeader>
         <CardContent className="space-y-3">
           {tasks.map((task) => (
-            <div key={task.id} className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted/50">
-              <Checkbox 
+            <div
+              key={task.id}
+              className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted/50"
+            >
+              <Checkbox
                 checked={task.completed}
-                onCheckedChange={(checked) => handleTaskComplete(task.id, checked as boolean)}
+                onCheckedChange={(checked) =>
+                  handleTaskComplete(task.id, checked as boolean)
+                }
               />
               <div className="flex-1">
-                <p className={`text-sm ${task.completed ? 'line-through text-muted-foreground' : ''}`}>
+                <p
+                  className={`text-sm ${
+                    task.completed ? 'line-through text-muted-foreground' : ''
+                  }`}
+                >
                   {task.title}
                 </p>
-                <p className="text-xs text-muted-foreground">{task.order} • {task.customer}</p>
+                <p className="text-xs text-muted-foreground">
+                  {task.order} • {task.customer}
+                </p>
               </div>
-              <Badge variant={task.status === 'In progress' ? 'default' : 'outline'} className="mr-2">
+              <Badge
+                variant={task.status === 'In progress' ? 'default' : 'outline'}
+                className="mr-2"
+              >
                 {task.status}
               </Badge>
-              <Badge variant="outline" className="mr-2">{task.due}</Badge>
+              <Badge variant="outline" className="mr-2">
+                {task.due}
+              </Badge>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button 
-                    variant="ghost" 
+                  <Button
+                    variant="ghost"
                     size="sm"
                     onClick={() => handleStartTaskTimer(task.title)}
                   >
@@ -355,9 +463,9 @@ function EmployeeContent() {
               </Tooltip>
             </div>
           ))}
-          
-          <Button 
-            variant="outline" 
+
+          <Button
+            variant="outline"
             className="w-full"
             onClick={handleCreateTask}
           >
@@ -375,8 +483,8 @@ function EmployeeContent() {
         <CardContent className="space-y-4">
           <div className="text-center space-y-3">
             <div className="text-4xl font-mono">{formatTime(timerSeconds)}</div>
-            <Button 
-              size="lg" 
+            <Button
+              size="lg"
               className="w-full"
               onClick={() => setTimerRunning(!timerRunning)}
             >
@@ -392,10 +500,7 @@ function EmployeeContent() {
                 </>
               )}
             </Button>
-            <Button 
-              variant="link"
-              onClick={handleManualTimeLog}
-            >
+            <Button variant="link" onClick={handleManualTimeLog}>
               Log manual time
             </Button>
           </div>
@@ -414,7 +519,10 @@ function EmployeeContent() {
       </Card>
 
       {/* Create Task Dialog */}
-      <Dialog open={showCreateTaskDialog} onOpenChange={setShowCreateTaskDialog}>
+      <Dialog
+        open={showCreateTaskDialog}
+        onOpenChange={setShowCreateTaskDialog}
+      >
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Create New Task</DialogTitle>
@@ -422,7 +530,7 @@ function EmployeeContent() {
               Add a new task to your task list. Fill in the details below.
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-4 py-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2 col-span-2">
@@ -431,7 +539,9 @@ function EmployeeContent() {
                   id="task-title"
                   placeholder="Enter task title"
                   value={newTask.title}
-                  onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
+                  onChange={(e) =>
+                    setNewTask({ ...newTask, title: e.target.value })
+                  }
                 />
               </div>
 
@@ -441,7 +551,9 @@ function EmployeeContent() {
                   id="task-description"
                   placeholder="Enter task description (optional)"
                   value={newTask.description}
-                  onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
+                  onChange={(e) =>
+                    setNewTask({ ...newTask, description: e.target.value })
+                  }
                   rows={3}
                 />
               </div>
@@ -452,7 +564,9 @@ function EmployeeContent() {
                   id="task-order"
                   placeholder="e.g., #1043"
                   value={newTask.order}
-                  onChange={(e) => setNewTask({ ...newTask, order: e.target.value })}
+                  onChange={(e) =>
+                    setNewTask({ ...newTask, order: e.target.value })
+                  }
                 />
               </div>
 
@@ -462,7 +576,9 @@ function EmployeeContent() {
                   id="task-customer"
                   placeholder="Enter customer name"
                   value={newTask.customer}
-                  onChange={(e) => setNewTask({ ...newTask, customer: e.target.value })}
+                  onChange={(e) =>
+                    setNewTask({ ...newTask, customer: e.target.value })
+                  }
                 />
               </div>
 
@@ -472,7 +588,9 @@ function EmployeeContent() {
                   id="task-due-date"
                   type="date"
                   value={newTask.dueDate}
-                  onChange={(e) => setNewTask({ ...newTask, dueDate: e.target.value })}
+                  onChange={(e) =>
+                    setNewTask({ ...newTask, dueDate: e.target.value })
+                  }
                 />
               </div>
 
@@ -480,7 +598,12 @@ function EmployeeContent() {
                 <Label htmlFor="task-priority">Priority</Label>
                 <Select
                   value={newTask.priority}
-                  onValueChange={(value) => setNewTask({ ...newTask, priority: value as 'low' | 'medium' | 'high' })}
+                  onValueChange={(value) =>
+                    setNewTask({
+                      ...newTask,
+                      priority: value as 'low' | 'medium' | 'high',
+                    })
+                  }
                 >
                   <SelectTrigger id="task-priority">
                     <SelectValue placeholder="Select priority" />
@@ -500,7 +623,9 @@ function EmployeeContent() {
                   type="number"
                   placeholder="e.g., 8"
                   value={newTask.estimatedHours}
-                  onChange={(e) => setNewTask({ ...newTask, estimatedHours: e.target.value })}
+                  onChange={(e) =>
+                    setNewTask({ ...newTask, estimatedHours: e.target.value })
+                  }
                   min="0"
                   step="0.5"
                 />
@@ -512,9 +637,7 @@ function EmployeeContent() {
             <Button variant="outline" onClick={handleCancelCreateTask}>
               Cancel
             </Button>
-            <Button onClick={handleCreateTaskSubmit}>
-              Create Task
-            </Button>
+            <Button onClick={handleCreateTaskSubmit}>Create Task</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -524,36 +647,70 @@ function EmployeeContent() {
 
 function SupervisorContent() {
   const [timeApprovals, setTimeApprovals] = useState([
-    { id: 1, name: 'Nuwan', initial: 'N', date: 'Oct 25, 2025', task: 'Task #1043', taskDesc: 'Material inspection', hours: '8h 30m', type: 'Regular work' },
-    { id: 2, name: 'Jayani', initial: 'J', date: 'Oct 25, 2025', task: 'Task #1044', taskDesc: 'QA review', hours: '7h 15m', type: 'QA testing' }
+    {
+      id: 1,
+      name: 'Nuwan',
+      initial: 'N',
+      date: 'Oct 25, 2025',
+      task: 'Task #1043',
+      taskDesc: 'Material inspection',
+      hours: '8h 30m',
+      type: 'Regular work',
+    },
+    {
+      id: 2,
+      name: 'Jayani',
+      initial: 'J',
+      date: 'Oct 25, 2025',
+      task: 'Task #1044',
+      taskDesc: 'QA review',
+      hours: '7h 15m',
+      type: 'QA testing',
+    },
   ]);
 
   const [tasks, setTasks] = useState([
-    { id: 1, title: 'Review production schedule', assignee: 'I', due: 'Due today', completed: false },
-    { id: 2, title: 'Team standup meeting', assignee: 'N', due: '11:00 AM', completed: false }
+    {
+      id: 1,
+      title: 'Review production schedule',
+      assignee: 'I',
+      due: 'Due today',
+      completed: false,
+    },
+    {
+      id: 2,
+      title: 'Team standup meeting',
+      assignee: 'N',
+      due: '11:00 AM',
+      completed: false,
+    },
   ]);
 
   const handleApproveTime = (approvalId: number) => {
-    const approval = timeApprovals.find(a => a.id === approvalId);
+    const approval = timeApprovals.find((a) => a.id === approvalId);
     if (approval) {
       toast.success(`Approved ${approval.hours} for ${approval.name}`);
-      setTimeApprovals(timeApprovals.filter(a => a.id !== approvalId));
+      setTimeApprovals(timeApprovals.filter((a) => a.id !== approvalId));
     }
   };
 
   const handleRejectTime = (approvalId: number) => {
-    const approval = timeApprovals.find(a => a.id === approvalId);
+    const approval = timeApprovals.find((a) => a.id === approvalId);
     if (approval) {
       toast.error(`Rejected ${approval.hours} for ${approval.name}`);
-      setTimeApprovals(timeApprovals.filter(a => a.id !== approvalId));
+      setTimeApprovals(timeApprovals.filter((a) => a.id !== approvalId));
     }
   };
 
   const handleToggleTask = (taskId: number, checked: boolean) => {
-    setTasks(tasks.map(task => 
-      task.id === taskId ? { ...task, completed: checked } : task
-    ));
-    toast.success(checked ? "Task marked as complete" : "Task marked as incomplete");
+    setTasks(
+      tasks.map((task) =>
+        task.id === taskId ? { ...task, completed: checked } : task
+      )
+    );
+    toast.success(
+      checked ? 'Task marked as complete' : 'Task marked as incomplete'
+    );
   };
 
   return (
@@ -565,11 +722,20 @@ function SupervisorContent() {
         </CardHeader>
         <CardContent>
           <div className="h-64 flex items-end justify-around gap-4 px-4">
-            {["Nuwan", "Jayani", "Imesh", "Kasun"].map((name, i) => (
-              <div key={name} className="flex-1 flex flex-col items-center gap-2">
+            {['Nuwan', 'Jayani', 'Imesh', 'Kasun'].map((name, i) => (
+              <div
+                key={name}
+                className="flex-1 flex flex-col items-center gap-2"
+              >
                 <div className="w-full space-y-1">
-                  <div className="bg-primary h-20 rounded-t" title="In progress" />
-                  <div className="bg-primary/30 h-16 rounded-t" title="Completed" />
+                  <div
+                    className="bg-primary h-20 rounded-t"
+                    title="In progress"
+                  />
+                  <div
+                    className="bg-primary/30 h-16 rounded-t"
+                    title="Completed"
+                  />
                 </div>
                 <p className="text-xs">{name}</p>
               </div>
@@ -586,33 +752,44 @@ function SupervisorContent() {
         <CardContent>
           <div className="space-y-3">
             {timeApprovals.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-4">No pending approvals</p>
+              <p className="text-sm text-muted-foreground text-center py-4">
+                No pending approvals
+              </p>
             ) : (
               timeApprovals.map((approval) => (
-                <div key={approval.id} className="flex items-center gap-3 p-3 rounded-lg border">
+                <div
+                  key={approval.id}
+                  className="flex items-center gap-3 p-3 rounded-lg border"
+                >
                   <Avatar className="h-8 w-8">
                     <AvatarFallback>{approval.initial}</AvatarFallback>
                   </Avatar>
                   <div className="flex-1 grid grid-cols-4 gap-4">
                     <div>
                       <p className="text-sm">{approval.name}</p>
-                      <p className="text-xs text-muted-foreground">{approval.date}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {approval.date}
+                      </p>
                     </div>
                     <div>
                       <p className="text-sm">{approval.task}</p>
-                      <p className="text-xs text-muted-foreground">{approval.taskDesc}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {approval.taskDesc}
+                      </p>
                     </div>
                     <p className="text-sm">{approval.hours}</p>
-                    <p className="text-sm text-muted-foreground">{approval.type}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {approval.type}
+                    </p>
                   </div>
-                  <Button 
+                  <Button
                     size="sm"
                     onClick={() => handleApproveTime(approval.id)}
                   >
                     Approve
                   </Button>
-                  <Button 
-                    size="sm" 
+                  <Button
+                    size="sm"
                     variant="ghost"
                     onClick={() => handleRejectTime(approval.id)}
                   >
@@ -633,19 +810,29 @@ function SupervisorContent() {
         <CardContent className="space-y-3">
           {tasks.map((task) => (
             <div key={task.id} className="flex items-center gap-3">
-              <Checkbox 
+              <Checkbox
                 checked={task.completed}
-                onCheckedChange={(checked) => handleToggleTask(task.id, checked as boolean)}
+                onCheckedChange={(checked) =>
+                  handleToggleTask(task.id, checked as boolean)
+                }
               />
               <div className="flex-1">
-                <p className={`text-sm ${task.completed ? 'line-through text-muted-foreground' : ''}`}>
+                <p
+                  className={`text-sm ${
+                    task.completed ? 'line-through text-muted-foreground' : ''
+                  }`}
+                >
                   {task.title}
                 </p>
               </div>
               <Avatar className="h-6 w-6">
-                <AvatarFallback className="text-xs">{task.assignee}</AvatarFallback>
+                <AvatarFallback className="text-xs">
+                  {task.assignee}
+                </AvatarFallback>
               </Avatar>
-              <Badge variant="outline" className="ml-2">{task.due}</Badge>
+              <Badge variant="outline" className="ml-2">
+                {task.due}
+              </Badge>
             </div>
           ))}
         </CardContent>
@@ -656,16 +843,59 @@ function SupervisorContent() {
 
 function ManagerContent() {
   const [showCreateOrderDialog, setShowCreateOrderDialog] = useState(false);
+  const [showAssignTaskDialog, setShowAssignTaskDialog] = useState(false);
   const [recentOrders, setRecentOrders] = useState([
-    { id: '#1043', client: 'APEX Garments', project: 'Factory design', status: 'Quoted', amount: 'LKR 245,000', date: 'Oct 12, 2025' },
-    { id: '#1044', client: 'Orion Tools', project: 'Customer model', status: 'In production', amount: 'LKR 1,150,000', date: 'Oct 13, 2025' },
-    { id: '#1045', client: 'Ceylon Plastics', project: 'Factory design', status: 'Draft', amount: '—', date: 'Oct 14, 2025' }
+    {
+      id: '#1043',
+      client: 'APEX Garments',
+      project: 'Factory design',
+      status: 'Quoted',
+      amount: 'LKR 245,000',
+      date: 'Oct 12, 2025',
+    },
+    {
+      id: '#1044',
+      client: 'Orion Tools',
+      project: 'Customer model',
+      status: 'In production',
+      amount: 'LKR 1,150,000',
+      date: 'Oct 13, 2025',
+    },
+    {
+      id: '#1045',
+      client: 'Ceylon Plastics',
+      project: 'Factory design',
+      status: 'Draft',
+      amount: '—',
+      date: 'Oct 14, 2025',
+    },
   ]);
 
   const [dueTasks] = useState([
-    { id: 1, title: 'Complete #1043 material inspection', due: 'Due today', priority: 'high' },
-    { id: 2, title: 'QA review for #1044', due: 'Tomorrow', priority: 'medium' }
+    {
+      id: 1,
+      title: 'Complete #1043 material inspection',
+      due: 'Due today',
+      priority: 'high',
+    },
+    {
+      id: 2,
+      title: 'QA review for #1044',
+      due: 'Tomorrow',
+      priority: 'medium',
+    },
   ]);
+
+  // Assign Task form state
+  const [assignTaskTitle, setAssignTaskTitle] = useState('');
+  const [assignTaskDescription, setAssignTaskDescription] = useState('');
+  const [assignTaskAssignee, setAssignTaskAssignee] = useState('');
+  const [assignTaskPriority, setAssignTaskPriority] = useState('');
+  const [assignTaskDueDate, setAssignTaskDueDate] = useState('');
+  const [assignTaskOrder, setAssignTaskOrder] = useState('');
+  const [isAssigningTask, setIsAssigningTask] = useState(false);
+  const [showAssignTaskValidation, setShowAssignTaskValidation] =
+    useState(false);
 
   // Form state for create order
   const [newOrder, setNewOrder] = useState({
@@ -674,12 +904,16 @@ function ManagerContent() {
     email: '',
     phone: '',
     project: '',
-    projectType: 'Factory design' as 'Factory design' | 'Customer model' | 'Prototype' | 'Other',
+    projectType: 'Factory design' as
+      | 'Factory design'
+      | 'Customer model'
+      | 'Prototype'
+      | 'Other',
     description: '',
     deliveryDate: '',
     estimatedAmount: '',
     priority: 'medium' as 'low' | 'medium' | 'high',
-    notes: ''
+    notes: '',
   });
 
   const handleCreateOrder = () => {
@@ -707,14 +941,14 @@ function ManagerContent() {
       const orderId = `#${orderNumber}`;
 
       // Format date
-      const orderDate = new Date().toLocaleDateString('en-US', { 
-        month: 'short', 
-        day: 'numeric', 
-        year: 'numeric' 
+      const orderDate = new Date().toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
       });
 
       // Format amount
-      const formattedAmount = newOrder.estimatedAmount 
+      const formattedAmount = newOrder.estimatedAmount
         ? `LKR ${parseFloat(newOrder.estimatedAmount).toLocaleString()}`
         : '—';
 
@@ -725,11 +959,11 @@ function ManagerContent() {
         project: newOrder.project,
         status: 'Draft',
         amount: formattedAmount,
-        date: orderDate
+        date: orderDate,
       };
 
       setRecentOrders([order, ...recentOrders]);
-      
+
       // Reset form
       setNewOrder({
         client: '',
@@ -742,9 +976,9 @@ function ManagerContent() {
         deliveryDate: '',
         estimatedAmount: '',
         priority: 'medium',
-        notes: ''
+        notes: '',
       });
-      
+
       setShowCreateOrderDialog(false);
       toast.success(`Order ${orderId} created successfully`);
     } catch (error) {
@@ -766,17 +1000,60 @@ function ManagerContent() {
       deliveryDate: '',
       estimatedAmount: '',
       priority: 'medium',
-      notes: ''
+      notes: '',
     });
     setShowCreateOrderDialog(false);
   };
 
   const handleAssignTask = () => {
-    toast.info("Assign Task dialog will be added in next phase");
+    setShowAssignTaskDialog(true);
+    setShowAssignTaskValidation(false);
+  };
+
+  const handleCloseAssignTask = () => {
+    setShowAssignTaskDialog(false);
+    setAssignTaskTitle('');
+    setAssignTaskDescription('');
+    setAssignTaskAssignee('');
+    setAssignTaskPriority('');
+    setAssignTaskDueDate('');
+    setAssignTaskOrder('');
+    setShowAssignTaskValidation(false);
+  };
+
+  const handleSubmitAssignTask = async () => {
+    setShowAssignTaskValidation(true);
+
+    // Validate required fields
+    if (
+      !assignTaskTitle.trim() ||
+      !assignTaskAssignee ||
+      !assignTaskPriority ||
+      !assignTaskOrder
+    ) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    setIsAssigningTask(true);
+    try {
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+
+      toast.success(
+        `Task "${assignTaskTitle}" assigned to ${assignTaskAssignee} successfully`
+      );
+      handleCloseAssignTask();
+    } catch (error) {
+      console.error('Assign task error:', error);
+      toast.error('Failed to assign task. Please try again.');
+    } finally {
+      setIsAssigningTask(false);
+    }
   };
 
   const handleGenerateReport = () => {
-    toast.info("Generate Report feature coming soon");
+    toast.info('Generate Report feature coming soon');
   };
 
   const handleOrderClick = (orderId: string) => {
@@ -803,7 +1080,7 @@ function ManagerContent() {
             </div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="pb-3">
             <CardDescription>Revenue MTD</CardDescription>
@@ -813,7 +1090,7 @@ function ManagerContent() {
             <p className="text-sm text-green-600">+12.5%</p>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="pb-3">
             <CardDescription>On-time Completion</CardDescription>
@@ -823,7 +1100,7 @@ function ManagerContent() {
             <p className="text-sm text-green-600">+2.1%</p>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="pb-3">
             <CardDescription>Open Quotes</CardDescription>
@@ -842,8 +1119,12 @@ function ManagerContent() {
         </CardHeader>
         <CardContent className="flex gap-3">
           <Button onClick={handleCreateOrder}>Create Order</Button>
-          <Button variant="secondary" onClick={handleAssignTask}>Assign Task</Button>
-          <Button variant="ghost" onClick={handleGenerateReport}>Generate Report</Button>
+          <Button variant="secondary" onClick={handleAssignTask}>
+            Assign Task
+          </Button>
+          <Button variant="ghost" onClick={handleGenerateReport}>
+            Generate Report
+          </Button>
         </CardContent>
       </Card>
 
@@ -855,7 +1136,7 @@ function ManagerContent() {
         <CardContent>
           <div className="space-y-2">
             {recentOrders.map((order) => (
-              <div 
+              <div
                 key={order.id}
                 className="grid grid-cols-6 gap-4 p-3 rounded-lg border hover:bg-muted/50 cursor-pointer"
                 onClick={() => handleOrderClick(order.id)}
@@ -863,7 +1144,11 @@ function ManagerContent() {
                 <p className="text-sm font-mono">{order.id}</p>
                 <p className="text-sm">{order.client}</p>
                 <p className="text-sm">{order.project}</p>
-                <Badge variant={order.status === 'In production' ? 'default' : 'outline'}>
+                <Badge
+                  variant={
+                    order.status === 'In production' ? 'default' : 'outline'
+                  }
+                >
                   {order.status}
                 </Badge>
                 <p className="text-sm">{order.amount}</p>
@@ -882,13 +1167,19 @@ function ManagerContent() {
         <CardContent className="space-y-3">
           {dueTasks.map((task) => (
             <div key={task.id} className="flex items-center gap-3">
-              <div className={`h-2 w-2 rounded-full ${task.priority === 'high' ? 'bg-destructive' : 'bg-orange-500'}`} />
+              <div
+                className={`h-2 w-2 rounded-full ${
+                  task.priority === 'high' ? 'bg-destructive' : 'bg-orange-500'
+                }`}
+              />
               <div className="flex-1">
                 <p className="text-sm">{task.title}</p>
               </div>
-              <Badge variant="outline" className="mr-2">{task.due}</Badge>
-              <Button 
-                variant="ghost" 
+              <Badge variant="outline" className="mr-2">
+                {task.due}
+              </Badge>
+              <Button
+                variant="ghost"
                 size="sm"
                 onClick={() => handleAssignDueTask(task.title)}
               >
@@ -900,15 +1191,19 @@ function ManagerContent() {
       </Card>
 
       {/* Create Order Dialog */}
-      <Dialog open={showCreateOrderDialog} onOpenChange={setShowCreateOrderDialog}>
+      <Dialog
+        open={showCreateOrderDialog}
+        onOpenChange={setShowCreateOrderDialog}
+      >
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Create New Order</DialogTitle>
             <DialogDescription>
-              Create a new order for a client. Fill in all required details below.
+              Create a new order for a client. Fill in all required details
+              below.
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-6 py-4">
             {/* Client Information */}
             <div className="space-y-4">
@@ -920,7 +1215,9 @@ function ManagerContent() {
                     id="order-client"
                     placeholder="Enter client name"
                     value={newOrder.client}
-                    onChange={(e) => setNewOrder({ ...newOrder, client: e.target.value })}
+                    onChange={(e) =>
+                      setNewOrder({ ...newOrder, client: e.target.value })
+                    }
                   />
                 </div>
 
@@ -930,7 +1227,12 @@ function ManagerContent() {
                     id="order-contact"
                     placeholder="Enter contact person name"
                     value={newOrder.contactPerson}
-                    onChange={(e) => setNewOrder({ ...newOrder, contactPerson: e.target.value })}
+                    onChange={(e) =>
+                      setNewOrder({
+                        ...newOrder,
+                        contactPerson: e.target.value,
+                      })
+                    }
                   />
                 </div>
 
@@ -941,7 +1243,9 @@ function ManagerContent() {
                     type="email"
                     placeholder="client@example.com"
                     value={newOrder.email}
-                    onChange={(e) => setNewOrder({ ...newOrder, email: e.target.value })}
+                    onChange={(e) =>
+                      setNewOrder({ ...newOrder, email: e.target.value })
+                    }
                   />
                 </div>
 
@@ -952,7 +1256,9 @@ function ManagerContent() {
                     type="tel"
                     placeholder="+94 XX XXX XXXX"
                     value={newOrder.phone}
-                    onChange={(e) => setNewOrder({ ...newOrder, phone: e.target.value })}
+                    onChange={(e) =>
+                      setNewOrder({ ...newOrder, phone: e.target.value })
+                    }
                   />
                 </div>
               </div>
@@ -970,7 +1276,9 @@ function ManagerContent() {
                     id="order-project"
                     placeholder="Enter project name"
                     value={newOrder.project}
-                    onChange={(e) => setNewOrder({ ...newOrder, project: e.target.value })}
+                    onChange={(e) =>
+                      setNewOrder({ ...newOrder, project: e.target.value })
+                    }
                   />
                 </div>
 
@@ -978,14 +1286,20 @@ function ManagerContent() {
                   <Label htmlFor="order-type">Project Type</Label>
                   <Select
                     value={newOrder.projectType}
-                    onValueChange={(value) => setNewOrder({ ...newOrder, projectType: value as any })}
+                    onValueChange={(value) =>
+                      setNewOrder({ ...newOrder, projectType: value as any })
+                    }
                   >
                     <SelectTrigger id="order-type">
                       <SelectValue placeholder="Select project type" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Factory design">Factory design</SelectItem>
-                      <SelectItem value="Customer model">Customer model</SelectItem>
+                      <SelectItem value="Factory design">
+                        Factory design
+                      </SelectItem>
+                      <SelectItem value="Customer model">
+                        Customer model
+                      </SelectItem>
                       <SelectItem value="Prototype">Prototype</SelectItem>
                       <SelectItem value="Other">Other</SelectItem>
                     </SelectContent>
@@ -998,7 +1312,9 @@ function ManagerContent() {
                     id="order-description"
                     placeholder="Enter project description"
                     value={newOrder.description}
-                    onChange={(e) => setNewOrder({ ...newOrder, description: e.target.value })}
+                    onChange={(e) =>
+                      setNewOrder({ ...newOrder, description: e.target.value })
+                    }
                     rows={3}
                   />
                 </div>
@@ -1017,7 +1333,9 @@ function ManagerContent() {
                     id="order-delivery-date"
                     type="date"
                     value={newOrder.deliveryDate}
-                    onChange={(e) => setNewOrder({ ...newOrder, deliveryDate: e.target.value })}
+                    onChange={(e) =>
+                      setNewOrder({ ...newOrder, deliveryDate: e.target.value })
+                    }
                   />
                 </div>
 
@@ -1028,7 +1346,12 @@ function ManagerContent() {
                     type="number"
                     placeholder="e.g., 250000"
                     value={newOrder.estimatedAmount}
-                    onChange={(e) => setNewOrder({ ...newOrder, estimatedAmount: e.target.value })}
+                    onChange={(e) =>
+                      setNewOrder({
+                        ...newOrder,
+                        estimatedAmount: e.target.value,
+                      })
+                    }
                     min="0"
                     step="1000"
                   />
@@ -1038,7 +1361,12 @@ function ManagerContent() {
                   <Label htmlFor="order-priority">Priority</Label>
                   <Select
                     value={newOrder.priority}
-                    onValueChange={(value) => setNewOrder({ ...newOrder, priority: value as 'low' | 'medium' | 'high' })}
+                    onValueChange={(value) =>
+                      setNewOrder({
+                        ...newOrder,
+                        priority: value as 'low' | 'medium' | 'high',
+                      })
+                    }
                   >
                     <SelectTrigger id="order-priority">
                       <SelectValue placeholder="Select priority" />
@@ -1057,7 +1385,9 @@ function ManagerContent() {
                     id="order-notes"
                     placeholder="Enter any additional notes"
                     value={newOrder.notes}
-                    onChange={(e) => setNewOrder({ ...newOrder, notes: e.target.value })}
+                    onChange={(e) =>
+                      setNewOrder({ ...newOrder, notes: e.target.value })
+                    }
                     rows={2}
                   />
                 </div>
@@ -1069,8 +1399,152 @@ function ManagerContent() {
             <Button variant="outline" onClick={handleCancelCreateOrder}>
               Cancel
             </Button>
-            <Button onClick={handleCreateOrderSubmit}>
-              Create Order
+            <Button onClick={handleCreateOrderSubmit}>Create Order</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Assign Task Dialog */}
+      <Dialog
+        open={showAssignTaskDialog}
+        onOpenChange={setShowAssignTaskDialog}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Assign Task</DialogTitle>
+            <DialogDescription>
+              Create and assign a new task to your team member
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>
+                Task Title <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                placeholder="e.g., Complete material inspection"
+                value={assignTaskTitle}
+                onChange={(e) => setAssignTaskTitle(e.target.value)}
+              />
+              {showAssignTaskValidation && !assignTaskTitle.trim() && (
+                <p className="text-xs text-destructive">
+                  Task title is required
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label>Description</Label>
+              <Textarea
+                placeholder="Task description (optional)"
+                value={assignTaskDescription}
+                onChange={(e) => setAssignTaskDescription(e.target.value)}
+                rows={3}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>
+                Assign To <span className="text-destructive">*</span>
+              </Label>
+              <Select
+                value={assignTaskAssignee}
+                onValueChange={setAssignTaskAssignee}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select team member" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="nuwan">Nuwan</SelectItem>
+                  <SelectItem value="jayani">Jayani</SelectItem>
+                  <SelectItem value="imesh">Imesh</SelectItem>
+                  <SelectItem value="kasun">Kasun</SelectItem>
+                </SelectContent>
+              </Select>
+              {showAssignTaskValidation && !assignTaskAssignee && (
+                <p className="text-xs text-destructive">
+                  Please select a team member
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label>
+                Related Order <span className="text-destructive">*</span>
+              </Label>
+              <Select
+                value={assignTaskOrder}
+                onValueChange={setAssignTaskOrder}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select an order" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="#1043">
+                    Order #1043 - APEX Garments
+                  </SelectItem>
+                  <SelectItem value="#1044">
+                    Order #1044 - Orion Tools
+                  </SelectItem>
+                  <SelectItem value="#1045">
+                    Order #1045 - Ceylon Plastics
+                  </SelectItem>
+                  <SelectItem value="#1042">
+                    Order #1042 - Lanka Industries
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              {showAssignTaskValidation && !assignTaskOrder && (
+                <p className="text-xs text-destructive">
+                  Please select an order
+                </p>
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>
+                  Priority <span className="text-destructive">*</span>
+                </Label>
+                <Select
+                  value={assignTaskPriority}
+                  onValueChange={setAssignTaskPriority}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select priority" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="high">High</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="low">Low</SelectItem>
+                  </SelectContent>
+                </Select>
+                {showAssignTaskValidation && !assignTaskPriority && (
+                  <p className="text-xs text-destructive">
+                    Please select priority
+                  </p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label>Due Date</Label>
+                <Input
+                  type="date"
+                  value={assignTaskDueDate}
+                  onChange={(e) => setAssignTaskDueDate(e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={handleCloseAssignTask}
+              disabled={isAssigningTask}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleSubmitAssignTask} disabled={isAssigningTask}>
+              {isAssigningTask ? 'Assigning...' : 'Assign Task'}
             </Button>
           </DialogFooter>
         </DialogContent>
