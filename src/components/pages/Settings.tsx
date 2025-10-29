@@ -1,43 +1,73 @@
-import { useState, useEffect } from "react";
-import { AppShell } from "../layout/AppShell";
-import { Button } from "../ui/button";
-import { Label } from "../ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
-import { Switch } from "../ui/switch";
-import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
-import { Checkbox } from "../ui/checkbox";
-import { Separator } from "../ui/separator";
-import { Input } from "../ui/input";
-import { toast } from "sonner";
-import { useRouter } from "../../lib/router";
+import { useState, useEffect, useMemo } from 'react';
+import { AppShell } from '../layout/AppShell';
+import { Button } from '../ui/button';
+import { Label } from '../ui/label';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '../ui/card';
+import { Switch } from '../ui/switch';
+import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
+import { Checkbox } from '../ui/checkbox';
+import { Separator } from '../ui/separator';
+import { Input } from '../ui/input';
+import { useRouter } from '../../lib/router';
+import {
+  useAppearanceTheme,
+  useDensity,
+  type ThemePreference,
+} from '../../lib/appearance';
+import { toast } from 'sonner';
 
 export function Settings() {
   const { permissions } = useRouter();
-  
+  const { theme: currentTheme, setTheme } = useAppearanceTheme();
+  const { density: currentDensity, setDensity } = useDensity();
+
   // General tab state
-  const [theme, setTheme] = useState("light");
-  const [density, setDensity] = useState("cozy");
-  const [language, setLanguage] = useState("en");
-  const [timezone, setTimezone] = useState("asia_colombo");
-  const [weekStart, setWeekStart] = useState("monday");
+  const [theme, setThemeState] = useState('light');
+  const [density, setDensityState] = useState<'cozy' | 'compact'>('cozy');
+  const handleThemeChange = (value: string) => {
+    const nextTheme: ThemePreference =
+      value === 'dark' || value === 'system' ? value : 'light';
+    setThemeState(nextTheme);
+    setTheme(nextTheme);
+  };
+  const handleDensityChange = (value: string) => {
+    const nextDensity = value === 'compact' ? 'compact' : 'cozy';
+    setDensityState(nextDensity);
+    setDensity(nextDensity);
+  };
+  const [language, setLanguage] = useState('en');
+  const [timezone, setTimezone] = useState('asia_colombo');
+  const [weekStart, setWeekStart] = useState('monday');
   const [showInDirectory, setShowInDirectory] = useState(true);
   const [shareStatus, setShareStatus] = useState(true);
 
   // Work tab state
-  const [defaultView, setDefaultView] = useState("my-tasks");
+  const [defaultView, setDefaultView] = useState('my-tasks');
   const [showCompleted, setShowCompleted] = useState(false);
   const [autoStartTimer, setAutoStartTimer] = useState(true);
-  const [defaultLogMode, setDefaultLogMode] = useState("timer");
-  const [roundDuration, setRoundDuration] = useState("none");
-  const [overtimeThreshold, setOvertimeThreshold] = useState("8");
+  const [defaultLogMode, setDefaultLogMode] = useState('timer');
+  const [roundDuration, setRoundDuration] = useState('none');
+  const [overtimeThreshold, setOvertimeThreshold] = useState('8');
   const [showPendingOnly, setShowPendingOnly] = useState(true);
   const [autoOpenRequest, setAutoOpenRequest] = useState(false);
 
   // Notifications tab state
   const [emailNotifications, setEmailNotifications] = useState(true);
-  const [digestEmail, setDigestEmail] = useState("off");
+  const [digestEmail, setDigestEmail] = useState('off');
   const [notifOrders, setNotifOrders] = useState({
     quoteSent: true,
     quoteApproved: true,
@@ -63,38 +93,58 @@ export function Settings() {
     if (savedSettings) {
       try {
         const settings = JSON.parse(savedSettings);
-        
+
         // General settings
         if (settings.general) {
-          if (settings.general.theme) setTheme(settings.general.theme);
-          if (settings.general.density) setDensity(settings.general.density);
+          if (settings.general.theme) setThemeState(settings.general.theme);
+          if (settings.general.density)
+            setDensityState(
+              settings.general.density === 'compact' ? 'compact' : 'cozy'
+            );
           if (settings.general.language) setLanguage(settings.general.language);
           if (settings.general.timezone) setTimezone(settings.general.timezone);
-          if (settings.general.weekStart) setWeekStart(settings.general.weekStart);
-          if (settings.general.showInDirectory !== undefined) setShowInDirectory(settings.general.showInDirectory);
-          if (settings.general.shareStatus !== undefined) setShareStatus(settings.general.shareStatus);
+          if (settings.general.weekStart)
+            setWeekStart(settings.general.weekStart);
+          if (settings.general.showInDirectory !== undefined)
+            setShowInDirectory(settings.general.showInDirectory);
+          if (settings.general.shareStatus !== undefined)
+            setShareStatus(settings.general.shareStatus);
         }
-        
+
         // Work settings
         if (settings.work) {
-          if (settings.work.defaultView) setDefaultView(settings.work.defaultView);
-          if (settings.work.showCompleted !== undefined) setShowCompleted(settings.work.showCompleted);
-          if (settings.work.autoStartTimer !== undefined) setAutoStartTimer(settings.work.autoStartTimer);
-          if (settings.work.defaultLogMode) setDefaultLogMode(settings.work.defaultLogMode);
-          if (settings.work.roundDuration) setRoundDuration(settings.work.roundDuration);
-          if (settings.work.overtimeThreshold) setOvertimeThreshold(settings.work.overtimeThreshold);
-          if (settings.work.showPendingOnly !== undefined) setShowPendingOnly(settings.work.showPendingOnly);
-          if (settings.work.autoOpenRequest !== undefined) setAutoOpenRequest(settings.work.autoOpenRequest);
+          if (settings.work.defaultView)
+            setDefaultView(settings.work.defaultView);
+          if (settings.work.showCompleted !== undefined)
+            setShowCompleted(settings.work.showCompleted);
+          if (settings.work.autoStartTimer !== undefined)
+            setAutoStartTimer(settings.work.autoStartTimer);
+          if (settings.work.defaultLogMode)
+            setDefaultLogMode(settings.work.defaultLogMode);
+          if (settings.work.roundDuration)
+            setRoundDuration(settings.work.roundDuration);
+          if (settings.work.overtimeThreshold)
+            setOvertimeThreshold(settings.work.overtimeThreshold);
+          if (settings.work.showPendingOnly !== undefined)
+            setShowPendingOnly(settings.work.showPendingOnly);
+          if (settings.work.autoOpenRequest !== undefined)
+            setAutoOpenRequest(settings.work.autoOpenRequest);
         }
-        
+
         // Notification settings
         if (settings.notifications) {
-          if (settings.notifications.emailNotifications !== undefined) setEmailNotifications(settings.notifications.emailNotifications);
-          if (settings.notifications.digestEmail) setDigestEmail(settings.notifications.digestEmail);
-          if (settings.notifications.orders) setNotifOrders(settings.notifications.orders);
-          if (settings.notifications.tasks) setNotifTasks(settings.notifications.tasks);
-          if (settings.notifications.time) setNotifTime(settings.notifications.time);
-          if (settings.notifications.leave) setNotifLeave(settings.notifications.leave);
+          if (settings.notifications.emailNotifications !== undefined)
+            setEmailNotifications(settings.notifications.emailNotifications);
+          if (settings.notifications.digestEmail)
+            setDigestEmail(settings.notifications.digestEmail);
+          if (settings.notifications.orders)
+            setNotifOrders(settings.notifications.orders);
+          if (settings.notifications.tasks)
+            setNotifTasks(settings.notifications.tasks);
+          if (settings.notifications.time)
+            setNotifTime(settings.notifications.time);
+          if (settings.notifications.leave)
+            setNotifLeave(settings.notifications.leave);
         }
       } catch (error) {
         console.error('Error loading settings:', error);
@@ -102,9 +152,30 @@ export function Settings() {
     }
   }, []);
 
+  useEffect(() => {
+    if (currentTheme) {
+      setThemeState(currentTheme);
+    }
+  }, [currentTheme]);
+
+  useEffect(() => {
+    setDensityState(currentDensity);
+  }, [currentDensity]);
+
+  const needsThemeUpdate = useMemo(
+    () => currentTheme !== theme,
+    [currentTheme, theme]
+  );
+  const needsDensityUpdate = useMemo(
+    () => currentDensity !== density,
+    [currentDensity, density]
+  );
+
   const handleSaveGeneral = async () => {
     try {
-      const currentSettings = JSON.parse(localStorage.getItem('appSettings') || '{}');
+      const currentSettings = JSON.parse(
+        localStorage.getItem('appSettings') || '{}'
+      );
       const updatedSettings = {
         ...currentSettings,
         general: {
@@ -117,21 +188,32 @@ export function Settings() {
           shareStatus,
         },
       };
-      
+
       // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 500));
-      
+
       localStorage.setItem('appSettings', JSON.stringify(updatedSettings));
-      toast.success("General settings saved");
+
+      if (needsThemeUpdate) {
+        setTheme(theme);
+      }
+
+      if (needsDensityUpdate) {
+        setDensity(density);
+      }
+
+      toast.success('General settings saved');
     } catch (error) {
-      console.error("Save general settings error:", error);
-      toast.error("Failed to save general settings. Please try again.");
+      console.error('Save general settings error:', error);
+      toast.error('Failed to save general settings. Please try again.');
     }
   };
 
   const handleSaveWork = async () => {
     try {
-      const currentSettings = JSON.parse(localStorage.getItem('appSettings') || '{}');
+      const currentSettings = JSON.parse(
+        localStorage.getItem('appSettings') || '{}'
+      );
       const updatedSettings = {
         ...currentSettings,
         work: {
@@ -145,21 +227,23 @@ export function Settings() {
           autoOpenRequest,
         },
       };
-      
+
       // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 500));
-      
+
       localStorage.setItem('appSettings', JSON.stringify(updatedSettings));
-      toast.success("Work preferences saved");
+      toast.success('Work preferences saved');
     } catch (error) {
-      console.error("Save work preferences error:", error);
-      toast.error("Failed to save work preferences. Please try again.");
+      console.error('Save work preferences error:', error);
+      toast.error('Failed to save work preferences. Please try again.');
     }
   };
 
   const handleSaveNotifications = async () => {
     try {
-      const currentSettings = JSON.parse(localStorage.getItem('appSettings') || '{}');
+      const currentSettings = JSON.parse(
+        localStorage.getItem('appSettings') || '{}'
+      );
       const updatedSettings = {
         ...currentSettings,
         notifications: {
@@ -171,20 +255,20 @@ export function Settings() {
           leave: notifLeave,
         },
       };
-      
+
       // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 500));
-      
+
       localStorage.setItem('appSettings', JSON.stringify(updatedSettings));
-      toast.success("Notification preferences saved");
+      toast.success('Notification preferences saved');
     } catch (error) {
-      console.error("Save notification preferences error:", error);
-      toast.error("Failed to save notification preferences. Please try again.");
+      console.error('Save notification preferences error:', error);
+      toast.error('Failed to save notification preferences. Please try again.');
     }
   };
 
   return (
-    <AppShell activePage="settings" breadcrumbs={["Settings"]}>
+    <AppShell activePage="settings" breadcrumbs={['Settings']}>
       <div className="space-y-6 max-w-5xl">
         {/* Header */}
         <div>
@@ -212,18 +296,24 @@ export function Settings() {
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label>Theme</Label>
-                  <RadioGroup value={theme} onValueChange={setTheme}>
+                  <RadioGroup value={theme} onValueChange={handleThemeChange}>
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="light" id="light" />
-                      <Label htmlFor="light" className="cursor-pointer">Light</Label>
+                      <Label htmlFor="light" className="cursor-pointer">
+                        Light
+                      </Label>
                     </div>
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="dark" id="dark" />
-                      <Label htmlFor="dark" className="cursor-pointer">Dark</Label>
+                      <Label htmlFor="dark" className="cursor-pointer">
+                        Dark
+                      </Label>
                     </div>
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="system" id="system" />
-                      <Label htmlFor="system" className="cursor-pointer">System</Label>
+                      <Label htmlFor="system" className="cursor-pointer">
+                        System
+                      </Label>
                     </div>
                   </RadioGroup>
                 </div>
@@ -232,14 +322,21 @@ export function Settings() {
 
                 <div className="space-y-2">
                   <Label>Density</Label>
-                  <RadioGroup value={density} onValueChange={setDensity}>
+                  <RadioGroup
+                    value={density}
+                    onValueChange={handleDensityChange}
+                  >
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="cozy" id="cozy" />
-                      <Label htmlFor="cozy" className="cursor-pointer">Cozy</Label>
+                      <Label htmlFor="cozy" className="cursor-pointer">
+                        Cozy
+                      </Label>
                     </div>
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="compact" id="compact" />
-                      <Label htmlFor="compact" className="cursor-pointer">Compact</Label>
+                      <Label htmlFor="compact" className="cursor-pointer">
+                        Compact
+                      </Label>
                     </div>
                   </RadioGroup>
                 </div>
@@ -256,7 +353,9 @@ export function Settings() {
             <Card>
               <CardHeader>
                 <CardTitle>Localization</CardTitle>
-                <CardDescription>Language and regional settings</CardDescription>
+                <CardDescription>
+                  Language and regional settings
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
@@ -291,11 +390,15 @@ export function Settings() {
                   <RadioGroup value={weekStart} onValueChange={setWeekStart}>
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="monday" id="monday" />
-                      <Label htmlFor="monday" className="cursor-pointer">Monday</Label>
+                      <Label htmlFor="monday" className="cursor-pointer">
+                        Monday
+                      </Label>
                     </div>
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="sunday" id="sunday" />
-                      <Label htmlFor="sunday" className="cursor-pointer">Sunday</Label>
+                      <Label htmlFor="sunday" className="cursor-pointer">
+                        Sunday
+                      </Label>
                     </div>
                   </RadioGroup>
                 </div>
@@ -312,7 +415,9 @@ export function Settings() {
             <Card>
               <CardHeader>
                 <CardTitle>Privacy</CardTitle>
-                <CardDescription>Control your visibility and presence</CardDescription>
+                <CardDescription>
+                  Control your visibility and presence
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
@@ -337,7 +442,10 @@ export function Settings() {
                       Share your online status (active/away)
                     </p>
                   </div>
-                  <Switch checked={shareStatus} onCheckedChange={setShareStatus} />
+                  <Switch
+                    checked={shareStatus}
+                    onCheckedChange={setShareStatus}
+                  />
                 </div>
 
                 <Separator />
@@ -355,7 +463,9 @@ export function Settings() {
             <Card>
               <CardHeader>
                 <CardTitle>Tasks</CardTitle>
-                <CardDescription>Configure task management preferences</CardDescription>
+                <CardDescription>
+                  Configure task management preferences
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
@@ -383,7 +493,10 @@ export function Settings() {
                       Display completed tasks by default
                     </p>
                   </div>
-                  <Switch checked={showCompleted} onCheckedChange={setShowCompleted} />
+                  <Switch
+                    checked={showCompleted}
+                    onCheckedChange={setShowCompleted}
+                  />
                 </div>
 
                 <Separator />
@@ -395,7 +508,10 @@ export function Settings() {
                       Start timer when moving task to "In progress"
                     </p>
                   </div>
-                  <Switch checked={autoStartTimer} onCheckedChange={setAutoStartTimer} />
+                  <Switch
+                    checked={autoStartTimer}
+                    onCheckedChange={setAutoStartTimer}
+                  />
                 </div>
 
                 <Separator />
@@ -410,19 +526,28 @@ export function Settings() {
             <Card>
               <CardHeader>
                 <CardTitle>Time Tracking</CardTitle>
-                <CardDescription>Manage time logging preferences</CardDescription>
+                <CardDescription>
+                  Manage time logging preferences
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label>Default log mode</Label>
-                  <RadioGroup value={defaultLogMode} onValueChange={setDefaultLogMode}>
+                  <RadioGroup
+                    value={defaultLogMode}
+                    onValueChange={setDefaultLogMode}
+                  >
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="timer" id="timer" />
-                      <Label htmlFor="timer" className="cursor-pointer">Timer</Label>
+                      <Label htmlFor="timer" className="cursor-pointer">
+                        Timer
+                      </Label>
                     </div>
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="manual" id="manual" />
-                      <Label htmlFor="manual" className="cursor-pointer">Manual</Label>
+                      <Label htmlFor="manual" className="cursor-pointer">
+                        Manual
+                      </Label>
                     </div>
                   </RadioGroup>
                 </div>
@@ -431,7 +556,10 @@ export function Settings() {
 
                 <div className="space-y-2">
                   <Label htmlFor="roundDuration">Round durations to</Label>
-                  <Select value={roundDuration} onValueChange={setRoundDuration}>
+                  <Select
+                    value={roundDuration}
+                    onValueChange={setRoundDuration}
+                  >
                     <SelectTrigger id="roundDuration">
                       <SelectValue />
                     </SelectTrigger>
@@ -447,7 +575,9 @@ export function Settings() {
                 <Separator />
 
                 <div className="space-y-2">
-                  <Label htmlFor="overtime">Overtime highlight threshold (hours/day)</Label>
+                  <Label htmlFor="overtime">
+                    Overtime highlight threshold (hours/day)
+                  </Label>
                   <Input
                     id="overtime"
                     type="number"
@@ -471,7 +601,9 @@ export function Settings() {
               <Card>
                 <CardHeader>
                   <CardTitle>Approvals</CardTitle>
-                  <CardDescription>Configure approval workflow preferences</CardDescription>
+                  <CardDescription>
+                    Configure approval workflow preferences
+                  </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex items-center justify-between">
@@ -521,7 +653,9 @@ export function Settings() {
             <Card>
               <CardHeader>
                 <CardTitle>Channels</CardTitle>
-                <CardDescription>Choose how you receive notifications</CardDescription>
+                <CardDescription>
+                  Choose how you receive notifications
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
@@ -541,7 +675,9 @@ export function Settings() {
 
                 <div className="space-y-2">
                   <Label>In-app notifications</Label>
-                  <p className="text-sm text-muted-foreground">Always enabled</p>
+                  <p className="text-sm text-muted-foreground">
+                    Always enabled
+                  </p>
                 </div>
 
                 <Separator />
@@ -572,7 +708,9 @@ export function Settings() {
             <Card>
               <CardHeader>
                 <CardTitle>Events</CardTitle>
-                <CardDescription>Choose which events trigger notifications</CardDescription>
+                <CardDescription>
+                  Choose which events trigger notifications
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* Orders */}
@@ -584,7 +722,10 @@ export function Settings() {
                         id="quoteSent"
                         checked={notifOrders.quoteSent}
                         onCheckedChange={(checked) =>
-                          setNotifOrders({ ...notifOrders, quoteSent: checked as boolean })
+                          setNotifOrders({
+                            ...notifOrders,
+                            quoteSent: checked as boolean,
+                          })
                         }
                       />
                       <Label htmlFor="quoteSent" className="cursor-pointer">
@@ -596,7 +737,10 @@ export function Settings() {
                         id="quoteApproved"
                         checked={notifOrders.quoteApproved}
                         onCheckedChange={(checked) =>
-                          setNotifOrders({ ...notifOrders, quoteApproved: checked as boolean })
+                          setNotifOrders({
+                            ...notifOrders,
+                            quoteApproved: checked as boolean,
+                          })
                         }
                       />
                       <Label htmlFor="quoteApproved" className="cursor-pointer">
@@ -614,7 +758,10 @@ export function Settings() {
                           })
                         }
                       />
-                      <Label htmlFor="movedToProduction" className="cursor-pointer">
+                      <Label
+                        htmlFor="movedToProduction"
+                        className="cursor-pointer"
+                      >
                         Moved to production
                       </Label>
                     </div>
@@ -632,7 +779,10 @@ export function Settings() {
                         id="assigned"
                         checked={notifTasks.assigned}
                         onCheckedChange={(checked) =>
-                          setNotifTasks({ ...notifTasks, assigned: checked as boolean })
+                          setNotifTasks({
+                            ...notifTasks,
+                            assigned: checked as boolean,
+                          })
                         }
                       />
                       <Label htmlFor="assigned" className="cursor-pointer">
@@ -644,7 +794,10 @@ export function Settings() {
                         id="dueToday"
                         checked={notifTasks.dueToday}
                         onCheckedChange={(checked) =>
-                          setNotifTasks({ ...notifTasks, dueToday: checked as boolean })
+                          setNotifTasks({
+                            ...notifTasks,
+                            dueToday: checked as boolean,
+                          })
                         }
                       />
                       <Label htmlFor="dueToday" className="cursor-pointer">
@@ -656,7 +809,10 @@ export function Settings() {
                         id="overdue"
                         checked={notifTasks.overdue}
                         onCheckedChange={(checked) =>
-                          setNotifTasks({ ...notifTasks, overdue: checked as boolean })
+                          setNotifTasks({
+                            ...notifTasks,
+                            overdue: checked as boolean,
+                          })
                         }
                       />
                       <Label htmlFor="overdue" className="cursor-pointer">
@@ -678,7 +834,10 @@ export function Settings() {
                           id="submitted"
                           checked={notifTime.submitted}
                           onCheckedChange={(checked) =>
-                            setNotifTime({ ...notifTime, submitted: checked as boolean })
+                            setNotifTime({
+                              ...notifTime,
+                              submitted: checked as boolean,
+                            })
                           }
                         />
                         <Label htmlFor="submitted" className="cursor-pointer">
@@ -691,7 +850,10 @@ export function Settings() {
                         id="statusChanged"
                         checked={notifTime.statusChanged}
                         onCheckedChange={(checked) =>
-                          setNotifTime({ ...notifTime, statusChanged: checked as boolean })
+                          setNotifTime({
+                            ...notifTime,
+                            statusChanged: checked as boolean,
+                          })
                         }
                       />
                       <Label htmlFor="statusChanged" className="cursor-pointer">
@@ -712,7 +874,10 @@ export function Settings() {
                         id="myStatus"
                         checked={notifLeave.myStatus}
                         onCheckedChange={(checked) =>
-                          setNotifLeave({ ...notifLeave, myStatus: checked as boolean })
+                          setNotifLeave({
+                            ...notifLeave,
+                            myStatus: checked as boolean,
+                          })
                         }
                       />
                       <Label htmlFor="myStatus" className="cursor-pointer">
@@ -731,7 +896,10 @@ export function Settings() {
                             })
                           }
                         />
-                        <Label htmlFor="teamRequests" className="cursor-pointer">
+                        <Label
+                          htmlFor="teamRequests"
+                          className="cursor-pointer"
+                        >
                           Team requests pending
                         </Label>
                       </div>
