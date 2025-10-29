@@ -243,6 +243,11 @@ export function Work() {
     setShowTaskValidation(false);
   };
 
+  const handleOpenNewTask = () => {
+    setShowTaskValidation(false);
+    setShowNewTask(true);
+  };
+
   // Update task status
   const updateTaskStatus = (taskId: string, newStatus: string) => {
     setTasks((prevTasks) =>
@@ -517,10 +522,7 @@ export function Work() {
                 <Download className="h-4 w-4 mr-2" />
                 Export
               </Button>
-              <Button
-                onClick={() => setShowNewTask(true)}
-                aria-label="Create new task"
-              >
+              <Button onClick={handleOpenNewTask} aria-label="Create new task">
                 <Plus className="h-4 w-4 mr-2" />
                 New Task
               </Button>
@@ -749,7 +751,7 @@ export function Work() {
                     variant="ghost"
                     size="sm"
                     className="w-full"
-                    onClick={() => toast.info('Add task functionality')}
+                    onClick={handleOpenNewTask}
                   >
                     <Plus className="h-4 w-4 mr-2" />
                     Add task
@@ -834,7 +836,7 @@ export function Work() {
                     variant="ghost"
                     size="sm"
                     className="w-full"
-                    onClick={() => toast.info('Add task functionality')}
+                    onClick={handleOpenNewTask}
                   >
                     <Plus className="h-4 w-4 mr-2" />
                     Add task
@@ -852,7 +854,7 @@ export function Work() {
                     variant="ghost"
                     size="sm"
                     className="w-full"
-                    onClick={() => toast.info('Add task functionality')}
+                    onClick={handleOpenNewTask}
                   >
                     <Plus className="h-4 w-4 mr-2" />
                     Add task
@@ -930,7 +932,7 @@ export function Work() {
                     variant="ghost"
                     size="sm"
                     className="w-full"
-                    onClick={() => toast.info('Add task functionality')}
+                    onClick={handleOpenNewTask}
                   >
                     <Plus className="h-4 w-4 mr-2" />
                     Add task
@@ -1368,7 +1370,6 @@ export function Work() {
               loadingText="Creating..."
             >
               Create Task
-              {isCreatingTask ? 'Creating...' : 'Create Task'}
             </Button>
           </DialogFooter>
         </DialogContent>
